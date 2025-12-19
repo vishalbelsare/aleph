@@ -1,9 +1,8 @@
 import React from 'react';
 
-import DualPane from 'src/components/common/DualPane';
-import ErrorSection from 'src/components/common/ErrorSection';
-import Screen from 'src/components/Screen/Screen';
-
+import SinglePane from 'components/common/SinglePane';
+import ErrorSection from 'components/common/ErrorSection';
+import Screen from 'components/Screen/Screen';
 
 function ErrorScreen(props) {
   const { title = '', error } = props;
@@ -11,11 +10,9 @@ function ErrorScreen(props) {
 
   return (
     <Screen title={screenTitle}>
-      <DualPane>
-        <DualPane.ContentPane>
-          <ErrorSection {...props} />
-        </DualPane.ContentPane>
-      </DualPane>
+      <SinglePane>
+        <ErrorSection {...props} />
+      </SinglePane>
     </Screen>
   );
 }

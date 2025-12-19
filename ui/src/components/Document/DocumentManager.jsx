@@ -1,44 +1,70 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
-import { Callout } from '@blueprintjs/core';
-import { FormattedMessage } from 'react-intl';
+import { AnchorButton, Callout, Classes, Divider } from '@blueprintjs/core';
+import { Tooltip2 as Tooltip } from '@blueprintjs/popover2';
+import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import DocumentDeleteDialog from 'src/dialogs/DocumentDeleteDialog/DocumentDeleteDialog';
-import DocumentUploadButton from 'src/components/Toolbar/DocumentUploadButton';
-import DocumentFolderButton from 'src/components/Toolbar/DocumentFolderButton';
-import EntitySearch from 'src/components/EntitySearch/EntitySearch';
-import { queryEntities } from 'src/actions';
-import { selectEntitiesResult } from 'src/selectors';
+import queryString from 'query-string';
+import c from 'classnames';
 
+import withRouter from 'app/withRouter';
+import { DialogToggleButton } from 'components/Toolbar';
+import DocumentUploadDialog from 'dialogs/DocumentUploadDialog/DocumentUploadDialog';
+import DocumentFolderDialog from 'dialogs/DocumentFolderDialog/DocumentFolderDialog';
+import EntityActionBar from 'components/Entity/EntityActionBar';
+import EntityDeleteButton from 'components/Toolbar/EntityDeleteButton';
+import EntitySearch from 'components/EntitySearch/EntitySearch';
+import { ErrorSection } from 'components/common';
+import { getGroupField } from 'components/SearchField/util';
+import getEntityLink from 'util/getEntityLink';
+import { selectEntitiesResult, selectModel } from 'selectors';
+import { deleteEntity, queryEntities } from 'actions';
+
+import './DocumentManager.scss';
+
+const messages = defineMessages({
+  empty: {
+    id: 'entity.document.manager.empty',
+    defaultMessage: 'No files or directories.',
+  },
+  emptyCanUpload: {
+    id: 'entity.document.manager.emptyCanUpload',
+    defaultMessage:
+      'No files or directories. Drop files here or click to upload.',
+  },
+  search_placeholder: {
+    id: 'entity.document.manager.search_placeholder',
+    defaultMessage: 'Search documents',
+  },
+  search_placeholder_document: {
+    id: 'entity.document.manager.search_placeholder_document',
+    defaultMessage: 'Search in {label}',
+  },
+  cannot_map: {
+    id: 'entity.document.manager.cannot_map',
+    defaultMessage: 'Select a table document to generate structured entities',
+  },
+  new: {
+    id: 'document.folder.new',
+    defaultMessage: 'New folder',
+  },
+  upload: {
+    id: 'document.upload.button',
+    defaultMessage: 'Upload',
+  },
+});
 
 export class DocumentManager extends Component {
   constructor(props) {
     super(props);
     this.state = {
       selection: [],
-      deleteIsOpen: false,
     };
     this.updateSelection = this.updateSelection.bind(this);
-    this.toggleDeleteSelection = this.toggleDeleteSelection.bind(this);
-  }
-
-  componentDidMount() {
-    this.refreshPending();
-    this.interval = setInterval(() => this.refreshPending(), 2000);
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.interval);
-  }
-
-  refreshPending() {
-    const { hasPending, query, result } = this.props;
-    if (!result.isLoading && result.total !== undefined && hasPending) {
-      const updateQuery = query.limit(result.results.length);
-      this.props.queryEntities({ query: updateQuery });
-    }
+    this.openMappingEditor = this.openMappingEditor.bind(this);
+    this.updateQuery = this.updateQuery.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
   }
 
   updateSelection(document) {
@@ -48,85 +74,193 @@ export class DocumentManager extends Component {
     });
   }
 
-  toggleDeleteSelection() {
-    if (this.state.deleteIsOpen) {
-      this.setState({ selection: [] });
+  canUpload() {
+    const { collection, document } = this.props;
+    const parentFolder =
+      document == null ? true : document.schema.isA('Folder');
+
+    if (!parentFolder || !collection.writeable) {
+      return false;
     }
-    this.setState(({ deleteIsOpen }) => ({ deleteIsOpen: !deleteIsOpen }));
+    return true;
+  }
+
+  updateQuery(newQuery) {
+    const { navigate, location } = this.props;
+    navigate({
+      pathname: location.pathname,
+      search: newQuery.toLocation(),
+      hash: location.hash,
+    });
+  }
+
+  onSearchSubmit(queryText) {
+    const { query } = this.props;
+    const newQuery = query.set('q', queryText);
+    this.updateQuery(newQuery);
+  }
+
+  openMappingEditor() {
+    const { navigate } = this.props;
+    const { selection } = this.state;
+    const pathname = getEntityLink(selection[0]);
+    navigate({ pathname, hash: queryString.stringify({ mode: 'mapping' }) });
   }
 
   render() {
     const {
-      collection, document, query, hasPending,
+      collection,
+      document,
+      fileSizeProp,
+      query,
+      result,
+      hasPending,
+      intl,
+      showSearch = true,
     } = this.props;
     const { selection } = this.state;
-    const mutableCollection = collection !== undefined && collection.writeable;
-    const mutableDocument = document === undefined || (document.schema && document.schema.name === 'Folder');
-    const showActions = mutableCollection && mutableDocument;
-    const updateSelection = showActions ? this.updateSelection : undefined;
+    const mutableDocument =
+      document === undefined || document?.schema?.name === 'Folder';
+    const showActions = collection?.writeable && mutableDocument;
+    const canUpload = this.canUpload();
+    const canMap = selection.length === 1 && selection[0].schema.isA('Table');
+
+    const searchPlaceholder = !!document
+      ? intl.formatMessage(messages.search_placeholder_document, {
+          label: document.getCaption(),
+        })
+      : intl.formatMessage(messages.search_placeholder);
+
+    const emptyComponent = canUpload ? (
+      <div className="DocumentManager__content__empty">
+        <DialogToggleButton
+          buttonProps={{
+            minimal: true,
+            fill: true,
+          }}
+          Dialog={DocumentUploadDialog}
+          dialogProps={{ collection, parent: document }}
+        >
+          <ErrorSection
+            icon="plus"
+            title={intl.formatMessage(messages.emptyCanUpload)}
+          />
+        </DialogToggleButton>
+      </div>
+    ) : (
+      <ErrorSection
+        icon="folder-open"
+        title={intl.formatMessage(messages.empty)}
+      />
+    );
 
     return (
       <div className="DocumentManager">
-        { showActions && (
-          <div className="bp3-button-group">
-            <DocumentUploadButton collection={collection} parent={document} />
-            <DocumentFolderButton collection={collection} parent={document} />
-            <button
-              type="button"
-              className="bp3-button bp3-icon-delete"
-              disabled={!selection.length}
-              onClick={this.toggleDeleteSelection}
+        {(showSearch || showActions) && (
+          <EntityActionBar
+            query={query}
+            writeable={showActions}
+            selection={selection}
+            resetSelection={() => this.setState({ selection: [] })}
+            onSearchSubmit={this.onSearchSubmit}
+            searchPlaceholder={searchPlaceholder}
+            searchDisabled={result.total === 0 && !query.hasQuery()}
+          >
+            {canUpload && (
+              <DialogToggleButton
+                buttonProps={{
+                  text: intl.formatMessage(messages.upload),
+                  icon: 'upload',
+                }}
+                Dialog={DocumentUploadDialog}
+                dialogProps={{ collection, parent: document }}
+              />
+            )}
+            <DialogToggleButton
+              buttonProps={{
+                text: intl.formatMessage(messages.new),
+                icon: 'folder-new',
+              }}
+              Dialog={DocumentFolderDialog}
+              dialogProps={{ collection, parent: document }}
+            />
+            <Divider />
+            <Tooltip
+              content={canMap ? null : intl.formatMessage(messages.cannot_map)}
+              className="prevent-flex-grow"
             >
-              <FormattedMessage id="document.viewer.delete" defaultMessage="Delete" />
-            </button>
-          </div>
+              <AnchorButton
+                icon="new-object"
+                disabled={!canMap}
+                onClick={this.openMappingEditor}
+              >
+                <FormattedMessage
+                  id="document.mapping.start"
+                  defaultMessage="Generate entities"
+                />
+              </AnchorButton>
+            </Tooltip>
+            <EntityDeleteButton
+              entities={selection}
+              onSuccess={() => this.setState({ selection: [] })}
+              actionType="delete"
+              deleteEntity={this.props.deleteEntity}
+              showCount
+            />
+          </EntityActionBar>
         )}
-        { hasPending && (
-          <Callout className="bp3-icon-info-sign bp3-intent-warning">
+        {hasPending && (
+          <Callout
+            className={c(`${Classes.ICON}-info-sign`, Classes.INTENT_WARNING)}
+          >
             <FormattedMessage
               id="refresh.callout_message"
               defaultMessage="Documents are being processed. Please wait..."
             />
           </Callout>
         )}
-        <EntitySearch
-          query={query}
-          hideCollection
-          documentMode
-          showPreview={false}
-          selection={selection}
-          updateSelection={updateSelection}
-        />
-        <DocumentDeleteDialog
-          documents={selection}
-          isOpen={this.state.deleteIsOpen}
-          toggleDialog={this.toggleDeleteSelection}
-        />
+        <div className="DocumentManager__content">
+          <EntitySearch
+            query={query}
+            showPreview={false}
+            selection={selection}
+            writeable={showActions}
+            updateSelection={this.updateSelection}
+            emptyComponent={emptyComponent}
+            columns={[getGroupField('dates'), fileSizeProp]}
+          />
+        </div>
       </div>
     );
   }
 }
-const mapStateToProps = (state, ownProps) => {
-  let { query } = ownProps;
-  const { collection } = ownProps;
-  if (!query.hasSort()) {
-    query = query.sortBy('name', 'asc');
-  }
 
+const mapStateToProps = (state, ownProps) => {
+  const { collection } = ownProps;
+  const model = selectModel(state);
+  const fileSizeProp = model.getSchema('Document').getProperty('fileSize');
+
+  let { query } = ownProps;
+  query = query.defaultSortBy('caption', 'asc');
   if (collection.writeable) {
     query = query.set('cache', 'false');
   }
-
   const result = selectEntitiesResult(state, query);
-  const status = _.map(result.results || [], 'status');
-  const hasPending = status.indexOf('pending') !== -1;
+
   return {
-    query, result, hasPending,
+    query,
+    result,
+    fileSizeProp: {
+      name: 'fileSize',
+      label: fileSizeProp.label,
+      type: fileSizeProp.type.name,
+      isProperty: true,
+    },
   };
 };
 
-const mapDispatchToProps = { queryEntities };
 export default compose(
   withRouter,
-  connect(mapStateToProps, mapDispatchToProps),
+  connect(mapStateToProps, { queryEntities, deleteEntity }),
+  injectIntl
 )(DocumentManager);

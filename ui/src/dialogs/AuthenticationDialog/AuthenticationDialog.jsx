@@ -1,19 +1,27 @@
 import React, { Component } from 'react';
 import { defineMessages, FormattedMessage, injectIntl } from 'react-intl';
 import {
-  Callout, Intent, Dialog, MenuDivider, Button,
+  Classes,
+  Callout,
+  Intent,
+  Dialog,
+  MenuDivider,
+  Button,
 } from '@blueprintjs/core';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { endpoint } from 'src/app/api';
-import { xhrErrorToast } from 'src/components/auth/xhrToast';
-import { showErrorToast } from 'src/app/toast';
-import { PasswordAuthLogin, PasswordAuthSignup } from 'src/components/auth/PasswordAuth';
+import { endpoint } from 'app/api';
+import { showResponseToast } from 'app/toast';
+import {
+  PasswordAuthLogin,
+  PasswordAuthSignup,
+} from 'components/auth/PasswordAuth';
+import { RoleBlockedMessage } from 'components/common';
 import {
   loginWithPassword as loginWithPasswordAction,
   loginWithToken as loginWithTokenAction,
-} from 'src/actions/sessionActions';
-import { selectMetadata } from 'src/selectors';
+} from 'actions/sessionActions';
+import { selectMetadata } from 'selectors';
 
 import './AuthenticationDialog.scss';
 
@@ -26,52 +34,50 @@ const messages = defineMessages({
     id: 'signup.register',
     defaultMessage: 'Register',
   },
-  not_available_title: {
-    id: 'login.not_available_title',
-    defaultMessage: 'Login is disabled',
-  },
-  pw_wrong_credentials: {
-    id: 'login.pw_wrong_credentials',
-    defaultMessage: 'You have entered an invalid username or password',
-  },
 });
 
 export class AuthenticationDialog extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
+    this.initialState = {
       submitted: false,
       firstSection: '',
       secondSection: 'hide',
+      userBlocked: false,
     };
+
+    this.state = this.initialState;
 
     this.onLogin = this.onLogin.bind(this);
     this.onSignup = this.onSignup.bind(this);
     this.onRegisterClick = this.onRegisterClick.bind(this);
     this.onSignInClick = this.onSignInClick.bind(this);
     this.onOAuthLogin = this.onOAuthLogin.bind(this);
+    this.resetState = this.resetState.bind(this);
   }
 
   onOAuthLogin() {
-    const { nextPath, metadata: { auth } } = this.props;
+    const {
+      nextPath,
+      metadata: { auth },
+    } = this.props;
     if (auth.oauth_uri) {
-      const { location } = window;
       const nextPathEnc = encodeURIComponent(nextPath || '/');
-      const targetUrl = `${location.protocol}//${location.host}/oauth?path=${nextPathEnc}`;
-      const loginUrlQueryString = `?next=${encodeURIComponent(targetUrl)}`;
-      window.location.replace(`/api/2/sessions/oauth${loginUrlQueryString}`);
+      window.location.replace(`/api/2/sessions/oauth?next=${nextPathEnc}`);
     }
   }
 
   onSignup(data) {
     const { intl } = this.props;
-    endpoint.post('/roles/code', data).then(() => {
-      this.setState({ submitted: true });
-    }).catch((e) => {
-      console.log(e);
-      xhrErrorToast(e.response, intl);
-    });
+    endpoint
+      .post('/roles/code', data)
+      .then(() => {
+        this.setState({ submitted: true });
+      })
+      .catch((e) => {
+        showResponseToast(e.response, intl);
+      });
   }
 
   async onLogin(data) {
@@ -79,33 +85,43 @@ export class AuthenticationDialog extends Component {
     try {
       await loginWithPassword(data.email, data.password);
       window.location.replace(nextPath || '/');
-    } catch (e) {
-      console.error(e);
-      if (e.response && e.response.status === 401) {
-        showErrorToast(intl.formatMessage(messages.pw_wrong_credentials));
+    } catch (error) {
+      if (error.response.status === 403) {
+        // User authenticated successfully but access is forbidden. This happens
+        // when a user account has been blocked.
+        this.setState({ userBlocked: true });
       } else {
-        xhrErrorToast(e.response, intl);
+        showResponseToast(error.response, intl);
       }
     }
   }
 
   onRegisterClick(e) {
     e.preventDefault();
-    this.setState({ firstSection: 'hide', secondSection: '' });
+    this.setState({
+      firstSection: 'hide',
+      secondSection: '',
+      submitted: false,
+    });
   }
 
   onSignInClick(e) {
     e.preventDefault();
-    this.setState({ firstSection: '', secondSection: 'hide' });
+    this.setState({
+      firstSection: '',
+      secondSection: 'hide',
+      submitted: false,
+    });
+  }
+
+  resetState() {
+    this.setState(this.initialState);
   }
 
   render() {
-    const {
-      metadata, intl, isOpen, toggleDialog,
-    } = this.props;
+    const { metadata, intl, isOpen, toggleDialog } = this.props;
     const { auth } = metadata;
-    const { submitted, firstSection, secondSection } = this.state;
-    const passwordLogin = auth.password_login_uri;
+    const { firstSection } = this.state;
 
     if (!isOpen) {
       return null;
@@ -118,69 +134,141 @@ export class AuthenticationDialog extends Component {
 
     return (
       <Dialog
-        icon="authentication"
         className="AuthenticationScreen"
         isOpen={isOpen}
         onClose={toggleDialog}
-        title={firstSection === '' ? intl.formatMessage(messages.title) : intl.formatMessage(messages.registration_title)}
+        onOpening={this.resetState}
+        title={
+          firstSection === ''
+            ? intl.formatMessage(messages.title)
+            : intl.formatMessage(messages.registration_title)
+        }
       >
-        <div className="inner">
-          <section className={firstSection}>
-            {passwordLogin && <PasswordAuthLogin buttonClassName="signin-button" onSubmit={this.onLogin} />}
-            {passwordLogin && (
-            <div className="link-box">
-              <a key="oauth" href="/" onClick={this.onRegisterClick}>
-                <FormattedMessage
-                  id="signup.register.question"
-                  defaultMessage="Don't have account? Register!"
-                />
-              </a>
-            </div>
-            )}
-          </section>
-          <section className={secondSection}>
-            {submitted
-              ? (
-                <Callout intent={Intent.SUCCESS} icon="tick">
-                  <h5><FormattedMessage id="signup.inbox.title" defaultMessage="Check your inbox" /></h5>
-                  <FormattedMessage
-                    id="signup.inbox.desc"
-                    defaultMessage="We've sent you an email, please follow the link to complete your registration"
-                  />
-                </Callout>
-              )
-              : (
-                <span>
-                  <PasswordAuthSignup buttonClassName="signin-button" onSubmit={this.onSignup} />
-                  <div className="link-box">
-                    <a key="oauth" href="/" onClick={this.onSignInClick}>
-                      <FormattedMessage
-                        id="signup.login"
-                        defaultMessage="Already have account? Sign in!"
-                      />
-                    </a>
-                  </div>
-                </span>
-              )}
-          </section>
-          {auth.oauth_uri && (
-            <React.Fragment>
-              <MenuDivider className="menu-divider" />
-              <Button icon="log-in" large fill onClick={this.onOAuthLogin}>
-                <FormattedMessage id="login.oauth" defaultMessage="Sign in via OAuth" />
-              </Button>
-            </React.Fragment>
-          )}
-        </div>
+        <div className={Classes.DIALOG_BODY}>{this.renderContent()}</div>
       </Dialog>
     );
   }
+
+  renderContent() {
+    const { userBlocked } = this.state;
+    const { metadata } = this.props;
+    const { auth } = metadata;
+
+    if (userBlocked) {
+      return this.renderBlockedMessage();
+    }
+
+    return (
+      <>
+        {this.renderFirstSection()}
+        {this.renderSecondSection()}
+        {auth.oauth_uri && this.renderOAuthButton()}
+      </>
+    );
+  }
+
+  renderBlockedMessage() {
+    const { metadata } = this.props;
+    const { message, link, link_label } = metadata.auth.role_blocked;
+
+    return (
+      <RoleBlockedMessage
+        message={message}
+        link={link}
+        linkLabel={link_label}
+      />
+    );
+  }
+
+  renderFirstSection() {
+    const { metadata } = this.props;
+    const { auth } = metadata;
+    const { firstSection } = this.state;
+    const passwordLogin = auth.password_login_uri;
+
+    return (
+      <section className={firstSection}>
+        {passwordLogin && (
+          <PasswordAuthLogin
+            buttonClassName="signin-button"
+            onSubmit={this.onLogin}
+          />
+        )}
+        {passwordLogin && (
+          <div className="link-box">
+            <a key="oauth" href="/" onClick={this.onRegisterClick}>
+              <FormattedMessage
+                id="signup.register.question"
+                defaultMessage="Don't have account? Register!"
+              />
+            </a>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  renderSecondSection() {
+    const { submitted, secondSection } = this.state;
+
+    return (
+      <section className={secondSection}>
+        {submitted ? (
+          <Callout
+            intent={Intent.SUCCESS}
+            icon="tick"
+            title={
+              <FormattedMessage
+                id="signup.inbox.title"
+                defaultMessage="Check your inbox"
+              />
+            }
+          >
+            <FormattedMessage
+              id="signup.inbox.desc"
+              defaultMessage="We've sent you an email, please follow the link to complete your registration"
+            />
+          </Callout>
+        ) : (
+          <span>
+            <PasswordAuthSignup
+              buttonClassName="signin-button"
+              onSubmit={this.onSignup}
+            />
+          </span>
+        )}
+        <div className="link-box">
+          <a key="oauth" href="/" onClick={this.onSignInClick}>
+            <FormattedMessage
+              id="signup.login"
+              defaultMessage="Already have account? Sign in!"
+            />
+          </a>
+        </div>
+      </section>
+    );
+  }
+
+  renderOAuthButton() {
+    return (
+      <>
+        <MenuDivider className="menu-divider" />
+        <Button icon="log-in" large fill onClick={this.onOAuthLogin}>
+          <FormattedMessage
+            id="login.oauth"
+            defaultMessage="Sign in via OAuth"
+          />
+        </Button>
+      </>
+    );
+  }
 }
-const mapStateToProps = state => ({ metadata: selectMetadata(state) });
+const mapStateToProps = (state) => ({ metadata: selectMetadata(state) });
 const mapDispatchToProps = {
-  loginWithToken: loginWithTokenAction, loginWithPassword: loginWithPasswordAction,
+  loginWithToken: loginWithTokenAction,
+  loginWithPassword: loginWithPasswordAction,
 };
 export default compose(
   connect(mapStateToProps, mapDispatchToProps),
-  injectIntl,
+  injectIntl
 )(AuthenticationDialog);

@@ -1,0 +1,42 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.CollectionInfo {
+  &__item {
+    margin-bottom: 15px;
+    // overflow: hidden;
+
+    &:last-child {
+      margin: 0;
+    }
+
+    .key {
+      @include rtlSupportInvertedProp(
+        margin,
+        right,
+        $aleph-grid-size * 2,
+        null
+      );
+      color: $gray1 !important;
+      margin-bottom: $aleph-grid-size * 0.5;
+    }
+
+    .value {
+      @include rtl(text-align, left, right);
+
+      & > * {
+        display: block;
+        margin-bottom: $aleph-grid-size * 0.5;
+        @include breakText;
+
+        &:last-child {
+          margin: 0;
+        }
+      }
+
+      .separator {
+        display: none;
+      }
+    }
+  }
+}

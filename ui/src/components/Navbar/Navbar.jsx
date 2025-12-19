@@ -2,184 +2,288 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { defineMessages, FormattedMessage, injectIntl } from 'react-intl';
 import queryString from 'query-string';
-import { Button, Icon } from '@blueprintjs/core';
+import {
+  Alignment,
+  Button,
+  Classes,
+  Navbar as BpNavbar,
+} from '@blueprintjs/core';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import AuthButtons from 'src/components/AuthButtons/AuthButtons';
-import LanguageMenu from 'src/components/LanguageMenu/LanguageMenu';
-import { selectSession } from 'src/selectors';
-import SearchBox from 'src/components/Navbar/SearchBox';
+import c from 'classnames';
+
+import withRouter from 'app/withRouter';
+import AdvancedSearch from 'components/AdvancedSearch/AdvancedSearch';
+import AuthButtons from 'components/AuthButtons/AuthButtons';
+import {
+  selectMetadata,
+  selectSession,
+  selectPages,
+  selectEntitiesResult,
+  selectExperimentalBookmarksFeatureEnabled,
+} from 'selectors';
+import SearchAlert from 'components/SearchAlert/SearchAlert';
+import { DialogToggleButton } from 'components/Toolbar';
+import {
+  HotkeysContainer,
+  SearchBox,
+  LinkButton,
+  BookmarksDrawer,
+} from 'components/common';
+import getPageLink from 'util/getPageLink';
+import { entitiesQuery } from 'queries';
+
 import './Navbar.scss';
 
 const messages = defineMessages({
-  search_placeholder: {
-    id: 'navbar.search_placeholder',
-    defaultMessage: 'Search companies, people and documents.',
+  hotkey_focus: {
+    id: 'hotkeys.search_focus',
+    defaultMessage: 'Search',
   },
-  mobile_search_placeholder: {
-    id: 'navbar.mobile_search_placeholder',
-    defaultMessage: 'Search companies, people and ...',
+  placeholder: {
+    id: 'search.placeholder',
+    defaultMessage: 'Search companies, people and documents',
   },
 });
-
 
 export class Navbar extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { searchValue: '', isMenuOpen: false, searchOpen: false };
-
-    this.onChange = this.onChange.bind(this);
-    this.onSubmit = this.onSubmit.bind(this);
-    this.onOpenMenu = this.onOpenMenu.bind(this);
-    this.onToggleSearch = this.onToggleSearch.bind(this);
-  }
-
-
-  componentDidMount() {
-    const { query } = this.props;
-    if (query !== undefined) {
-      this.setState({ searchValue: query.getString('q') });
-    }
-  }
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (snapshot.query.shouldUpdate) {
-      this.updateSearchValue(snapshot.query.nextValue);
-    }
-  }
-
-  onChange({ target }) {
-    this.setState({ searchValue: target.value });
-  }
-
-
-  onSubmit = event => event.preventDefault();
-
-  onOpenMenu(event) {
-    event.preventDefault();
-    this.setState(({ isMenuOpen }) => ({ isMenuOpen: !isMenuOpen }));
-  }
-
-  onToggleSearch(event) {
-    event.preventDefault();
-    this.setState(({ searchOpen }) => ({ searchOpen: !searchOpen }));
-  }
-
-  getSnapshotBeforeUpdate(prevProps) {
-    if (this.props.query && (prevProps.query.state.q !== this.props.query.state.q)) {
-      if (this.props.query.state.q !== this.state.searchValue) {
-        return {
-          query: {
-            shouldUpdate: true,
-            nextValue: this.props.query.state.q || '',
-          },
-        };
-      }
-    }
-    return {
-      query: {},
+    this.state = {
+      mobileSearchOpen: false,
+      advancedSearchOpen: false,
     };
+
+    this.onToggleMobileSearch = this.onToggleMobileSearch.bind(this);
+    this.onToggleAdvancedSearch = this.onToggleAdvancedSearch.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
+    this.navbarRef = React.createRef();
+    this.inputRef = React.createRef();
   }
 
-  updateSearchValue = searchValue => this.setState({ searchValue });
+  onToggleMobileSearch(event) {
+    event.preventDefault();
+    this.setState(({ mobileSearchOpen }) => ({
+      mobileSearchOpen: !mobileSearchOpen,
+    }));
+  }
 
-  doSearch = (searchValue = this.state.searchValue) => {
-    const { query, updateQuery, history } = this.props;
-    if (updateQuery !== undefined) {
-      updateQuery(query.set('q', searchValue));
-    } else {
-      history.push({
-        pathname: '/search',
-        search: queryString.stringify({
-          q: searchValue,
-        }),
-      });
+  onToggleAdvancedSearch() {
+    this.setState(({ advancedSearchOpen }) => ({
+      advancedSearchOpen: !advancedSearchOpen,
+    }));
+  }
+
+  onSearchSubmit(queryText) {
+    const { navigate, query } = this.props;
+    let search = queryString.stringify({ q: queryText });
+    if (query) {
+      const newQuery = query.set('q', queryText);
+      search = newQuery.toLocation();
     }
-  };
 
+    navigate({
+      pathname: '/search',
+      search,
+    });
+  }
 
   render() {
     const {
-      metadata, session, intl, isHomepage,
+      metadata,
+      pages,
+      session,
+      query,
+      result,
+      isHomepage,
+      bookmarksEnabled,
+      intl,
     } = this.props;
-    const { isMenuOpen, searchOpen } = this.state;
+    const { advancedSearchOpen, mobileSearchOpen } = this.state;
+
+    const queryText = query?.getString('q');
+    const alertQuery = result?.query_text || queryText;
+    const menuPages = pages.filter((page) => page.menu);
 
     return (
-      <div id="Navbar" className="Navbar">
-        <nav className="bp3-navbar">
-          <div className="navbar-header-search">
-            <div className="bp3-navbar-group">
-              <div className="bp3-navbar-heading">
-                <Link to="/">
+      <>
+        <div className="Navbar" ref={this.navbarRef}>
+          <BpNavbar id="Navbar" className={Classes.DARK}>
+            <BpNavbar.Group
+              align={Alignment.LEFT}
+              className={c('Navbar__left-group', { hide: mobileSearchOpen })}
+            >
+              <Link to="/" className="Navbar__home-link">
+                {!!metadata.app.logo && (
                   <img src={metadata.app.logo} alt={metadata.app.title} />
-                </Link>
-              </div>
-              <div className="bp3-navbar-heading heading-title">
-                <Link to="/">{metadata.app.title}</Link>
-              </div>
-            </div>
-
-            <div className={searchOpen ? 'full-length-input visible-sm-flex' : 'hide'}>
-              <button type="button" className="back-button visible-sm-block bp3-button bp3-large bp3-minimal bp3-icon-arrow-left" onClick={this.onToggleSearch} />
+                )}
+                {!!metadata.app.title && (
+                  <span className="Navbar__home-link__text">
+                    {metadata.app.title}
+                  </span>
+                )}
+              </Link>
+            </BpNavbar.Group>
+            <BpNavbar.Group
+              align={Alignment.CENTER}
+              className={c('Navbar__middle-group', {
+                'mobile-force-open': mobileSearchOpen,
+              })}
+            >
               {!isHomepage && (
-              <form onSubmit={this.onSubmit} autoComplete="off" className="navbar-search-form">
-                <SearchBox
-                  doSearch={this.doSearch}
-                  placeholder={intl.formatMessage(
-                    searchOpen ? messages.mobile_search_placeholder : messages.search_placeholder,
+                <div className="Navbar__search-container">
+                  <div className="Navbar__search-container__content">
+                    <div className="Navbar__search-container__searchbar">
+                      <SearchBox
+                        onSearch={this.onSearchSubmit}
+                        query={query}
+                        inputProps={{
+                          inputRef: this.inputRef,
+                          rightElement: <SearchAlert alertQuery={alertQuery} />,
+                        }}
+                        placeholder={intl.formatMessage(messages.placeholder)}
+                      />
+                    </div>
+                    <Button
+                      className={c(
+                        'Navbar__search-container__search-tips',
+                        Classes.FIXED
+                      )}
+                      icon="settings"
+                      minimal
+                      onClick={this.onToggleAdvancedSearch}
+                    />
+                  </div>
+                </div>
+              )}
+            </BpNavbar.Group>
+            <BpNavbar.Group
+              align={Alignment.RIGHT}
+              className="Navbar__right-group"
+              id="navbarSupportedContent"
+            >
+              {!isHomepage && (
+                <>
+                  <div className="Navbar__mobile-search-toggle">
+                    {!mobileSearchOpen && (
+                      <Button
+                        icon="search"
+                        minimal
+                        onClick={this.onToggleMobileSearch}
+                      />
+                    )}
+                    {mobileSearchOpen && (
+                      <Button
+                        icon="cross"
+                        minimal
+                        onClick={this.onToggleMobileSearch}
+                      />
+                    )}
+                  </div>
+                  {!mobileSearchOpen && (
+                    <BpNavbar.Divider className="Navbar__mobile-search-divider" />
                   )}
-                  updateSearchValue={this.updateSearchValue}
-                  searchValue={this.state.searchValue}
-                />
-              </form>
+                </>
               )}
-            </div>
-
-
-            <div className={`search-and-burger-icons ${isHomepage && 'burger-fixed'}`}>
-              {!isHomepage && (
-                <a className="search-icon icon visible-sm-block" href="/" onClick={this.onToggleSearch}>
-                  <Icon icon="search" />
-                </a>
+              {!mobileSearchOpen && (
+                <>
+                  <LinkButton
+                    to="/datasets"
+                    icon="database"
+                    minimal={true}
+                    className="Navbar_collections-button"
+                  >
+                    <FormattedMessage
+                      id="nav.collections"
+                      defaultMessage="Datasets"
+                    />
+                  </LinkButton>
+                  {session.loggedIn && (
+                    <LinkButton
+                      to="/investigations"
+                      icon="briefcase"
+                      minimal={true}
+                      className="Navbar__collections-button mobile-hide"
+                    >
+                      <FormattedMessage
+                        id="nav.cases"
+                        defaultMessage="Investigations"
+                      />
+                    </LinkButton>
+                  )}
+                  {bookmarksEnabled && (
+                    <DialogToggleButton
+                      buttonProps={{
+                        text: (
+                          <FormattedMessage
+                            id="nav.bookmarks"
+                            defaultMessage="Bookmarks"
+                          />
+                        ),
+                        icon: 'star',
+                        minimal: true,
+                      }}
+                      Dialog={BookmarksDrawer}
+                    />
+                  )}
+                  {menuPages.map((page) => (
+                    <LinkButton
+                      key={page.name}
+                      to={getPageLink(page)}
+                      icon={page.icon}
+                      minimal={true}
+                      className="Navbar__collections-button mobile-hide"
+                    >
+                      {page.short}
+                    </LinkButton>
+                  ))}
+                </>
               )}
-              <a className={`menu-icon icon visible-sm-block ${isMenuOpen && 'transform'}`} href="/" onClick={this.onOpenMenu}>
-                <div className="bar1" />
-                <div className="bar2" />
-                <div className="bar3" />
-              </a>
-            </div>
-            <div className={`navbar-options bp3-navbar-group ${isMenuOpen && 'show-menu-dropdown'}`} id="navbarSupportedContent">
-              <div className="menu-items">
-                <Link to="/sources">
-                  <Button icon="database" className="bp3-minimal">
-                    <FormattedMessage id="nav.sources" defaultMessage="Sources" />
-                  </Button>
-                </Link>
-                {session.loggedIn
-                  && (
-                  <Link to="/cases">
-                    <Button icon="briefcase" className="bp3-minimal">
-                      <FormattedMessage id="nav.cases" defaultMessage="Cases" />
-                    </Button>
-                  </Link>
-                  )
-                }
-                <div className="bp3-navbar-divider" />
-                <AuthButtons session={session} auth={metadata.auth} />
-                <LanguageMenu />
+              <BpNavbar.Divider
+                className={c({ 'mobile-hidden': mobileSearchOpen })}
+              />
+              <div className={c({ 'mobile-hidden': mobileSearchOpen })}>
+                <AuthButtons className={c({ hide: mobileSearchOpen })} />
               </div>
-            </div>
-          </div>
-        </nav>
-      </div>
+            </BpNavbar.Group>
+          </BpNavbar>
+        </div>
+        <AdvancedSearch
+          isOpen={advancedSearchOpen}
+          onToggle={this.onToggleAdvancedSearch}
+          navbarRef={this.navbarRef}
+        />
+        <HotkeysContainer
+          hotkeys={[
+            {
+              combo: '/',
+              global: true,
+              preventDefault: true,
+              label: intl.formatMessage(messages.hotkey_focus),
+              onKeyDown: () => this.inputRef?.current?.focus(),
+            },
+          ]}
+        />
+      </>
     );
   }
 }
-const mapStateToProps = state => ({ session: selectSession(state) });
+const mapStateToProps = (state, ownProps) => {
+  const { location } = ownProps;
+  const query = entitiesQuery(location);
+  return {
+    query,
+    result: selectEntitiesResult(state, query),
+    isHomepage: location.pathname === '/',
+    metadata: selectMetadata(state),
+    session: selectSession(state),
+    pages: selectPages(state),
+    bookmarksEnabled: selectExperimentalBookmarksFeatureEnabled(state),
+  };
+};
 
 export default compose(
   withRouter,
   connect(mapStateToProps),
-  injectIntl,
+  injectIntl
 )(Navbar);

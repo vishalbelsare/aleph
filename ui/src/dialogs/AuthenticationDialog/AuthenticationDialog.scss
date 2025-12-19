@@ -1,11 +1,8 @@
-.AuthenticationScreen {
-  width: 28em !important;
+@import 'app/mixins.scss';
 
-  .inner {
-    margin-top: 1em;
-    margin-left: 1em;
-    margin-right: 1em;
-  }
+.AuthenticationScreen.AuthenticationScreen {
+  width: 28em !important;
+  padding-bottom: 0;
 
   .menu-divider {
     margin-top: 1em;
@@ -13,7 +10,7 @@
   }
 
   .signin-button {
-    float: right;
+    @include rtl(float, right, left);
   }
 
   .hide {
@@ -21,8 +18,8 @@
   }
 
   .link-box {
-    margin-top: 2em;
-    margin-bottom: 2em;
-    // margin-left: 8.5em;
+    // TODO: This is a hacky way to center the link horizontally. We should
+    // refactor this and use flexbox to achieve that.
+    margin-top: 1.75em;
   }
 }

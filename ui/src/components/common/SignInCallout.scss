@@ -1,2 +1,32 @@
-.SignInCallout {
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.SignInCallout.#{$bp-ns}-callout {
+  margin-bottom: $aleph-grid-size * 2;
+
+  @include rtlSupportInvertedProp(padding, right, 40px, null);
+
+  .#{$bp-ns}-button.sign-in-button {
+    min-height: unset;
+    min-width: unset;
+    padding: 0;
+    vertical-align: text-top;
+    font-weight: bold;
+    text-decoration: underline !important;
+
+    &:hover {
+      background: none;
+      color: $aleph-link-color;
+    }
+  }
+
+  .button-close {
+    min-height: unset;
+    min-width: unset;
+    position: absolute;
+    @include rtl(right, 7px, null);
+    @include rtl(left, null, 7px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
 }

@@ -1,23 +1,11 @@
-import React, { PureComponent } from 'react';
+import { Count } from 'react-ftm';
+import { connect } from 'react-redux';
 
-import { Numeric } from 'src/components/common';
-
+import { selectLocale } from 'selectors';
 import './Count.scss';
 
-class Count extends PureComponent {
-  render() {
-    const { count, full = false } = this.props;
+const mapStateToProps = (state) => ({
+  locale: selectLocale(state),
+});
 
-    if (count === undefined || count === 0) {
-      return null;
-    }
-
-    return (
-      <span className="Count bp3-tag bp3-round">
-        <Numeric num={count} abbr={!full} />
-      </span>
-    );
-  }
-}
-
-export default Count;
+export default connect(mapStateToProps)(Count);

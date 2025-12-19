@@ -1,0 +1,45 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.MappingIndexItem {
+  width: 100%;
+  margin: $aleph-grid-size 0;
+
+  &__title.#{$bp-ns}-heading {
+    margin-bottom: $aleph-grid-size * 1.5;
+    display: inline-block;
+  }
+
+  &__schemata {
+    margin-bottom: $aleph-grid-size;
+    .SchemaLabel {
+      display: inline-flex;
+      white-space: nowrap;
+      @include rtlSupportInvertedProp(margin, right, $aleph-grid-size * 2, 0);
+      font-weight: bolder;
+    }
+  }
+
+  &__statusItems {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding-top: $aleph-grid-size;
+    border-top: 1px solid $aleph-border-color;
+  }
+
+  &__statusItem {
+    &__value {
+      white-space: nowrap;
+    }
+
+    .#{$bp-ns}-intent-primary {
+      font-weight: bold;
+      color: $green1;
+    }
+    .#{$bp-ns}-intent-danger {
+      font-weight: bold;
+      color: $red1;
+    }
+  }
+}

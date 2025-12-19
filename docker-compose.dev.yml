@@ -1,124 +1,179 @@
-version: "3.2"
-
 services:
   postgres:
-    image: postgres:10.0
-    hostname: postgres
+    image: postgres:15
     ports:
-      - "15432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    # enable this to log all SQL statements
+    # command: ["postgres", "-c", "log_statement=all"]
     environment:
       POSTGRES_USER: aleph
       POSTGRES_PASSWORD: aleph
       POSTGRES_DATABASE: aleph
 
   elasticsearch:
-    image: alephdata/aleph-elasticsearch:10
-    hostname: elasticsearch
+    image: ghcr.io/alephdata/aleph-elasticsearch:3bb5dbed97cfdb9955324d11e5c623a5c5bbc410
+    restart: on-failure
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+      - "http.cors.allow-headers=*"
+      - "http.cors.allow-credentials=true"
     ports:
-      - "19200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
 
-  rabbitmq:
-    image: rabbitmq
-    hostname: queue
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-
   redis:
-      image: redis:alpine
-      command: ["redis-server", "--appendonly", "yes"]
-      volumes:
-        - redis-data:/data
+    image: redis:alpine
+    command: ["redis-server", "--save", "3600", "10"]
+    volumes:
+      - redis-data:/data
+
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/
 
   convert-document:
-    image: alephdata/convert-document:1.4.0
+    image: ghcr.io/alephdata/convert-document:latest
+    read_only: true
     restart: on-failure
-    tmpfs:
-      - /tmp
-      - /root/.config
-    expose:
-      - 3000
+    user: app
+    tmpfs: /tmp
 
-  recognize-text:
-    image: alephdata/recognize-text:1.2.0
+  ingest-file:
+    image: ghcr.io/alephdata/ingest-file:4.1.2
+    # build:
+    #   context: ../ingest-file
+    hostname: ingest
+    tmpfs: /tmp
+    volumes:
+      - archive-data:/data
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
     restart: on-failure
-    expose:
-      - 50000
+    env_file:
+      - aleph.env
+
+  # translate:
+  #   build:
+  #     context: services/translate
+  #   image: alephdata/translate:${ALEPH_TAG:-latest}
+  #   volumes:
+  #   - archive-data:/data
+  #   - "./services/translate/translate:/translate/translate"
+  #   - "/:/host"
+  #   restart: on-failure
+  #   environment:
+  #     GOOGLE_APPLICATION_CREDENTIALS: '/host/.../translate-service-account.json'
+  #     GOOGLE_PROJECT_ID: my-project
+  #   env_file:
+  #   - aleph.env
 
   app:
-    image: alephdata/aleph
+    build:
+      context: .
+    image: ghcr.io/alephdata/aleph:${ALEPH_TAG:-latest}
+    hostname: aleph
     command: /bin/bash
-    links:
+    depends_on:
       - postgres
       - elasticsearch
-      - rabbitmq
       - redis
-      - convert-document
-      - recognize-text
+      - rabbitmq
+      # - translate
+      - ingest-file
     tmpfs: /tmp
     volumes:
       - archive-data:/data
       - "./aleph:/aleph/aleph"
+      - "./site:/aleph/site"
       - "./contrib:/aleph/contrib"
       - "./mappings:/aleph/mappings"
-      - "/:/host"
+      - "~:/host"
     cap_add:
       - SYS_PTRACE
     environment:
-      ALEPH_DEBUG: 'true'
-      ALEPH_SECRET_KEY: 'development'
-      ALEPH_OAUTH: 'false'
-      ARCHIVE_TYPE: 'file'
+      ALEPH_DEBUG: "true"
+      ALEPH_SECRET_KEY: "development"
     env_file:
       - aleph.env
 
   api:
-    image: alephdata/aleph
-    command: python3 aleph/manage.py runserver -h 0.0.0.0 -p 5000 --threaded
-    expose:
-      - 5000
+    build:
+      context: .
+    image: ghcr.io/alephdata/aleph:${ALEPH_TAG:-latest}
+    command: python3 -m debugpy --listen 0.0.0.0:5678 -m flask run -h 0.0.0.0 -p 5000 --with-threads --reload --debugger
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:5678:5678"
     restart: on-failure
-    links:
+    depends_on:
       - postgres
       - elasticsearch
-      - rabbitmq
       - redis
-      - convert-document
-      - recognize-text
+      - rabbitmq
+      - ingest-file
     tmpfs: /tmp
     volumes:
       - archive-data:/data
       - "./aleph:/aleph/aleph"
-      - "/:/host"
+      - "./site:/aleph/site"
     environment:
-      ALEPH_DEBUG: 'true'
-      ALEPH_SECRET_KEY: 'development'
-      ARCHIVE_TYPE: 'file'
+      ALEPH_DEBUG: "true"
+      ALEPH_PROFILE: "false"
+      ALEPH_SECRET_KEY: "development"
+      FLASK_APP: "aleph.wsgi"
     env_file:
       - aleph.env
-  
+
   ui:
-    image: alephdata/aleph-ui
-    links:
+    build:
+      context: ui
+    image: ghcr.io/alephdata/aleph-ui:${ALEPH_TAG:-latest}
+    depends_on:
       - api
-    command: npm run start
+    command: "bash -c 'rsync --archive --inplace --no-compress --whole-file /node_modules /alephui && npm run start'"
     ports:
-      - "8080:3000"
+      - "127.0.0.1:8080:8080"
     volumes:
-      - "./ui/src:/alephui/src"
-      - "./ui/public:/alephui/public"
-      - "./ui/.tx:/alephui/.tx"
-      - "./ui/package.json:/alephui/package.json"
+      - "./ui/src:/alephui/src:cached"
+      - "./ui/package.json:/alephui/package.json:cached"
+      - "./ui/package-lock.json:/alephui/package-lock.json:cached"
+      - "./ui/craco.config.js:/alephui/craco.config.js:cached"
+      - "./ui/node_modules:/alephui/node_modules:delegated"
     environment:
-      REACT_APP_API_ENDPOINT: '/api/2'
+      PORT: "8080"
+      CI: "true"
+    env_file:
+      - aleph.env
+
+  worker:
+    build:
+      context: .
+    image: alephdata/aleph:${ALEPH_TAG:-latest}
+    command: aleph worker
+    restart: on-failure
+    depends_on:
+      - postgres
+      - elasticsearch
+      - redis
+      - ingest-file
+      - rabbitmq
+    tmpfs:
+      - /tmp
+    volumes:
+      - archive-data:/data
     env_file:
       - aleph.env
 
@@ -126,5 +181,5 @@ volumes:
   archive-data: {}
   elasticsearch-data: {}
   postgres-data: {}
-  rabbitmq-data: {}
   redis-data: {}
+  rabbitmq-data: {}

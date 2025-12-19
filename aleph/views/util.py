@@ -1,22 +1,24 @@
 import io
 import csv
-from banal import as_bool
+import string
+import logging
+from banal import as_bool, ensure_dict, is_mapping, is_listish
 from normality import stringify
 from flask import Response, request, render_template
 from flask_babel import gettext
-from urllib.parse import urlparse, urljoin
-from werkzeug.exceptions import MethodNotAllowed, Forbidden
+from urllib.parse import urlparse
+from werkzeug.exceptions import Forbidden
 from werkzeug.exceptions import BadRequest, NotFound
-from lxml.etree import tostring
-from lxml.html import document_fromstring
-from lxml.html.clean import Cleaner
 
-from aleph.core import settings
 from aleph.authz import Authz
-from aleph.model import Document, Collection, Entity
+from aleph.model import Collection, EntitySet
+from aleph.validation import get_validator
 from aleph.index.entities import get_entity as _get_index_entity
 from aleph.index.collections import get_collection as _get_index_collection
-from aleph.util import JSONEncoder
+from aleph.util import JSONEncoder, random_id
+
+log = logging.getLogger(__name__)
+CALLBACK_VALID = string.ascii_letters + string.digits + "_"
 
 
 def require(*predicates):
@@ -37,46 +39,70 @@ def get_flag(name, default=False):
     return as_bool(request.args.get(name), default=default)
 
 
-def validate_data(data, schema, many=None):
-    """Validate the data inside a request against a schema."""
-    data, errors = schema().load(data, many=many)
-    if len(errors):
-        resp = jsonify({
-            'status': 'error',
-            'errors': errors,
-            'message': gettext('Error during data validation')
-        }, status=400)
-        raise BadRequest(response=resp)
-    return data
+def get_session_id():
+    role_id = stringify(request.authz.id) or "anonymous"
+    session_id = stringify(request._session_id)
+    session_id = session_id or random_id()
+    return "%s:%s" % (role_id, session_id)
 
 
-def parse_request(schema, many=None):
+def parse_request(schema):
     """Get request form data or body and validate it against a schema."""
     if request.is_json:
         data = request.get_json()
     else:
         data = request.form.to_dict(flat=True)
-    return validate_data(data, schema, many=many)
+    return validate(data, schema)
 
 
-def get_db_entity(entity_id, action=Authz.READ):
-    get_index_entity(entity_id, action=action)
-    entity = Entity.by_id(entity_id)
-    if entity is None:
-        raise MethodNotAllowed("Cannot write this entity")
+def validate(data, schema):
+    """Validate the data inside a request against a schema."""
+    validator = get_validator(schema)
+    errors = {}
+    for error in validator.iter_errors(data):
+        path = ".".join((str(c) for c in error.path))
+        if path not in errors:
+            errors[path] = error.message
+        else:
+            errors[path] += "; " + error.message
+        log.info("ERROR [%s]: %s", path, error.message)
+
+    if not len(errors):
+        return data
+
+    resp = jsonify(
+        {
+            "status": "error",
+            "errors": errors,
+            "message": gettext("Error during data validation"),
+        },
+        status=400,
+    )
+    raise BadRequest(response=resp)
+
+
+def clean_object(data):
+    """Remove unset values from the response to save some bandwidth."""
+    if is_mapping(data):
+        out = {}
+        for k, v in data.items():
+            v = clean_object(v)
+            if v is not None:
+                out[k] = v
+        return out if len(out) else None
+    elif is_listish(data):
+        data = [clean_object(d) for d in data]
+        data = [d for d in data if d is not None]
+        return data if len(data) else None
+    elif isinstance(data, str):
+        return data if len(data) else None
+    return data
+
+
+def get_index_entity(entity_id, action=Authz.READ, **kwargs):
+    entity = obj_or_404(_get_index_entity(entity_id, **kwargs))
+    require(request.authz.can(entity["collection_id"], action))
     return entity
-
-
-def get_index_entity(entity_id, action=Authz.READ):
-    entity = obj_or_404(_get_index_entity(entity_id))
-    require(request.authz.can(entity['collection_id'], action))
-    return entity
-
-
-def get_db_document(document_id, action=Authz.READ):
-    document = obj_or_404(Document.by_id(document_id))
-    require(request.authz.can(document.collection_id, action))
-    return document
 
 
 def get_db_collection(collection_id, action=Authz.READ):
@@ -85,106 +111,76 @@ def get_db_collection(collection_id, action=Authz.READ):
     return collection
 
 
+def get_entityset(entityset_id, action=Authz.READ):
+    eset = obj_or_404(EntitySet.by_id(entityset_id))
+    require(request.authz.can(eset.collection_id, action))
+    return eset
+
+
+def get_nested(data, obj_field, id_field):
+    collection = ensure_dict(data.get(obj_field))
+    return data.get(id_field, collection.get("id"))
+
+
+def get_nested_collection(data, action=Authz.READ):
+    collection_id = get_nested(data, "collection", "collection_id")
+    return get_db_collection(collection_id, action)
+
+
 def get_index_collection(collection_id, action=Authz.READ):
     collection = obj_or_404(_get_index_collection(collection_id))
-    require(request.authz.can(collection['id'], action))
+    require(request.authz.can(collection["id"], action))
     return collection
 
 
-def is_safe_url(target):
-    """Check if the forward URL is on the same host as the site."""
-    test_url = urlparse(target)
-    return test_url.scheme in ('http', 'https') and \
-        urlparse(settings.APP_UI_URL).hostname == test_url.hostname
-
-
-def get_best_next_url(*urls):
-    """Returns the safest URL to redirect to from a given list."""
-    for url in urls:
-        url = urljoin(settings.APP_UI_URL, url)
-        if url and is_safe_url(url):
-            return url
-    return settings.APP_UI_URL
-
-
-CLEANER = Cleaner(
-    style=True,
-    meta=True,
-    links=False,
-    remove_tags=['body', 'form'],
-    kill_tags=['area', 'audio', 'base', 'bgsound', 'embed', 'frame',
-               'frameset', 'head', 'img', 'iframe', 'input', 'link',
-               'map', 'meta', 'nav', 'object', 'plaintext', 'track',
-               'video']
-)
-
-
-def sanitize_html(html_text, base_url):
-    """Remove anything from the given HTML that must not show up in the UI."""
-    # TODO: circumvent encoding declarations?
-    if html_text is None or not len(html_text.strip()):
-        return
-    cleaned = CLEANER.clean_html(html_text)
-    html = document_fromstring(cleaned)
-    for (el, attr, href, _) in html.iterlinks():
-        href = normalize_href(href, base_url)
-        if href is not None:
-            el.set(attr, href)
-        if el.tag == 'a':
-            el.set('target', '_blank')
-            rel = set(el.get('rel', '').lower().split())
-            rel.update(['nofollow', 'noreferrer', 'external', 'noopener'])
-            el.set('rel', ' '.join(rel))
-    return tostring(html)
-
-
-def normalize_href(href, base_url):
-    # Make links relative to the source_url
-    href = stringify(href)
-    if href is None:
-        return
-    if base_url is not None:
-        return urljoin(base_url, href)
+def get_url_path(url):
     try:
-        parsed = urlparse(href)
-        if not parsed.netloc:
-            return None
-        return href
-    except ValueError:
-        return None
+        return urlparse(url)._replace(netloc="", scheme="").geturl() or "/"
+    except Exception:
+        return "/"
 
 
 def jsonify(obj, status=200, headers=None, encoder=JSONEncoder):
     """Serialize to JSON and also dump from the given schema."""
     data = encoder().encode(obj)
-    return Response(data, headers=headers, status=status,
-                    mimetype='application/json')
+    mimetype = "application/json"
+    if "callback" in request.args:
+        cb = request.args.get("callback")
+        cb = "".join((c for c in cb if c in CALLBACK_VALID))
+        data = "%s && %s(%s)" % (cb, cb, data)
+        # mime cf. https://stackoverflow.com/questions/24528211/
+        mimetype = "application/javascript"
+    return Response(data, headers=headers, status=status, mimetype=mimetype)
 
 
 def stream_ijson(iterable, encoder=JSONEncoder):
     """Stream JSON line-based data."""
+
     def _generate_stream():
         for row in iterable:
-            row.pop('_index', None)
+            row.pop("_index", None)
             yield encoder().encode(row)
-            yield '\n'
-    return Response(_generate_stream(), mimetype='application/json+stream')
+            yield "\n"
+
+    return Response(_generate_stream(), mimetype="application/json+stream")
 
 
 def stream_csv(iterable):
     """Stream JSON line-based data."""
+
     def _generate_stream():
         for row in iterable:
             values = []
             for value in row:
-                values.append(stringify(value) or '')
+                values.append(stringify(value) or "")
             buffer = io.StringIO()
-            writer = csv.writer(buffer, dialect='excel', delimiter=',')
+            writer = csv.writer(buffer, dialect="excel", delimiter=",")
             writer.writerow(values)
             yield buffer.getvalue()
-    return Response(_generate_stream(), mimetype='text_csv')
+
+    return Response(_generate_stream(), mimetype="text_csv")
 
 
 def render_xml(template, **kwargs):
     data = render_template(template, **kwargs)
-    return Response(data, mimetype='text/xml')
+    return Response(data, mimetype="text/xml")

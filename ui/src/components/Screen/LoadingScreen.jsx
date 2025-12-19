@@ -1,15 +1,15 @@
 import React from 'react';
-import { Spinner } from '@blueprintjs/core';
+import { Classes, Spinner } from '@blueprintjs/core';
 
-import Screen from 'src/components/Screen/Screen';
+import Screen from 'components/Screen/Screen';
 
 import './LoadingScreen.scss';
 
-const LoadingScreen = () => (
-  <Screen>
+const LoadingScreen = (props) => (
+  <Screen {...props}>
     <div className="LoadingScreen">
       <div className="spinner">
-        <Spinner className="bp3-large" />
+        <Spinner className={Classes.LARGE} />
       </div>
     </div>
   </Screen>

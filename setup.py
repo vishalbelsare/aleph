@@ -1,31 +1,26 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='aleph',
-    version='3.1.2',
+    name="aleph",
+    version="4.1.7",
     description="Document sifting web frontend",
-    long_description="",
     classifiers=[
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
     ],
-    keywords='',
-    author='OCCRP Data Team',
-    author_email='data@occrp.org',
-    url='https://github.com/alephdata/aleph/wiki',
-    license='MIT',
-    packages=find_packages(exclude=['ez_setup', 'examples', 'test']),
+    author="OCCRP Data Team",
+    author_email="data@occrp.org",
+    url="https://docs.aleph.occrp.org",
+    license="MIT",
+    packages=find_packages(exclude=["ez_setup", "examples", "test"]),
     namespace_packages=[],
     include_package_data=True,
     zip_safe=False,
     install_requires=[],
-    test_suite='nose.collector',
+    test_suite="nose.collector",
     entry_points={
-        'aleph.init': [],
-        'console_scripts': [
-            'aleph = aleph.manage:main',
-        ]
+        "console_scripts": ["aleph = aleph.manage:cli"],
     },
-    tests_require=['coverage', 'nose']
+    tests_require=["coverage", "nose"],
 )

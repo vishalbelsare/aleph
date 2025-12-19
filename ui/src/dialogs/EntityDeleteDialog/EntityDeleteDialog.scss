@@ -1,0 +1,40 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.EntityDeleteDialog {
+  &.blocking {
+    .#{$bp-ns}-button.#{$bp-ns}-intent-danger {
+      display: none;
+    }
+  }
+  &__file-list {
+    list-style-type: none;
+    padding: 0;
+
+    &__item {
+      margin: $aleph-grid-size * 0.5 0;
+      display: flex;
+
+      &.deleted {
+        color: $red1;
+      }
+
+      &__icon {
+        width: $aleph-grid-size * 2;
+        margin: 0 $aleph-grid-size * 0.5;
+      }
+
+      .#{$bp-ns}-spinner {
+        display: inline-flex;
+      }
+
+      .#{$bp-ns}-icon {
+        vertical-align: middle;
+      }
+
+      .EntityLabel {
+        white-space: nowrap;
+      }
+    }
+  }
+}

@@ -1,96 +1,47 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
+@import 'app/layouts.scss';
+@import 'app/mixins.scss';
 
 .DualPane {
+  padding: $aleph-content-padding;
   flex-grow: 1;
   display: flex;
-  flex-flow: row nowrap;
-  align-content: stretch;
-  align-items: stretch;
-  @media screen and (max-width: $aleph-screen-sm-max-width) {
-    flex-flow: column;
-  }
-}
+  flex-flow: column nowrap;
 
-.InfoPane {
-  flex: 10;
+  @media screen and (max-width: $aleph-screen-sm-max-width) {
+    padding: $aleph-mobile-content-padding;
+  }
+
+  &__inner-container {
+    @extend .pane-layout;
+  }
 }
 
 .DualPane .ContentPane {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  overflow-x: auto;
-
-  &.padded {
-    padding: $aleph-grid-size * 2;
-  }
+  @extend .pane-layout-main;
+  padding: 0;
+  @include rtlSupportInvertedProp(padding, left, $aleph-content-padding, null);
 
   @media screen and (max-width: $aleph-screen-sm-max-width) {
     order: 2;
+    padding: $aleph-grid-size 0 !important;
   }
-}
-
-%SidePane {
-  flex: none;
-  width: $aleph-sidebar-width;
-  border-right: 0;
-  overflow-x: hidden; // just in case.
-  min-height: 100%;
 }
 
 .DualPane .SidePane {
-  @extend %SidePane;
-  padding: $aleph-grid-size * 2;
-  @media screen and (max-width: $aleph-screen-md-max-width) and (min-width: $aleph-screen-sm-max-width) {
-    width: $aleph-sidepane-md-width;
-  }
-  @media screen and (max-width: $aleph-screen-sm-max-width) {
-    width: 100%;
-  }
-}
+  @extend .pane-layout-side;
+  @include rtlSupportInvertedProp(
+    border,
+    right,
+    1px solid $aleph-border-color,
+    null
+  );
+  @include rtlSupportInvertedProp(padding, right, $aleph-content-padding, null);
 
-.DualPane .InfoPane {
-  @extend %SidePane;
-  border-right: 0;
-  box-shadow: $pt-elevation-shadow-3;
-  background: $aleph-content-background;
-  flex-direction: row !important;
-  min-height: 100%;
-  @media screen and (max-width: $aleph-screen-md-max-width) and (min-width: $aleph-screen-sm-max-width) {
-    width: $aleph-infopane-md-width !important;
-  }
   @media screen and (max-width: $aleph-screen-sm-max-width) {
-    width: 100% !important;
     margin-bottom: 1em;
-  }
-  
-  h1, h2 {
-    // Show a subtle line below headings
-    margin-bottom: $aleph-grid-size;
-    padding-bottom: $aleph-grid-size;
-    line-height: 1.5;
+    @include rtlSupportInvertedProp(border, right, none, null);
+    @include rtlSupportInvertedProp(padding, right, 0, null);
     border-bottom: 1px solid $aleph-border-color;
-    overflow-wrap: break-word;
-  }
-
-  .pane-heading {
-    background: $aleph-sidebar-background;
-    padding: $aleph-grid-size*4 $aleph-grid-size*2;
-    color: white;
-  }
-
-  .pane-heading h1 {
-    border: 0;
-    margin: 0;
-    color: white;
-    font-weight: 300;
-  }
-
-  .pane-content {
-    padding: $aleph-grid-size $aleph-grid-size*2;
-  }
-
-  .collection-content {
-    padding: $aleph-grid-size $aleph-grid-size;
   }
 }

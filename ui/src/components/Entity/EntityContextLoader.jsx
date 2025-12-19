@@ -1,16 +1,27 @@
 import { PureComponent } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import {
-  fetchEntity, fetchDocumentContent, fetchEntityTags, fetchEntityReferences, queryEntities,
-} from 'src/actions';
-import {
-  selectEntity, selectEntityTags, selectEntityReferences,
-  selectEntitiesResult, selectDocumentContent,
-} from 'src/selectors';
-import { queryEntitySimilar, queryFolderDocuments } from 'src/queries';
 
+import withRouter from 'app/withRouter';
+import {
+  fetchEntity,
+  fetchEntityTags,
+  queryEntities,
+  querySimilar,
+  queryEntityExpand,
+} from 'actions';
+import {
+  selectEntity,
+  selectEntityTags,
+  selectEntitiesResult,
+  selectSimilarResult,
+  selectEntityExpandResult,
+} from 'selectors';
+import {
+  entitySimilarQuery,
+  folderDocumentsQuery,
+  entityReferencesQuery,
+} from 'queries';
 
 class EntityContextLoader extends PureComponent {
   componentDidMount() {
@@ -22,39 +33,28 @@ class EntityContextLoader extends PureComponent {
   }
 
   fetchIfNeeded() {
-    const { entityId, entity } = this.props;
-    if (entity.shouldLoad) {
+    const { entityId, entity, tagsResult, isPreview } = this.props;
+    if (entity.shouldLoadDeep) {
       this.props.fetchEntity({ id: entityId });
     }
 
-    const { tagsResult } = this.props;
     if (tagsResult.shouldLoad) {
       this.props.fetchEntityTags({ id: entityId });
     }
 
-    const { referencesResult } = this.props;
-    if (referencesResult.shouldLoad) {
-      this.props.fetchEntityReferences({ id: entityId });
-    }
-
-    if (entity && entity.schema && entity.schema.name) {
-      this.fetchWithSchema(entityId, entity.schema);
-    }
-  }
-
-  fetchWithSchema(entityId, schema) {
-    const { content } = this.props;
-    if (schema.isDocument() && content.shouldLoad) {
-      this.props.fetchDocumentContent({ id: entityId });
+    const { expandQuery, expandResult } = this.props;
+    if (expandResult.shouldLoad) {
+      this.props.queryEntityExpand({ query: expandQuery });
     }
 
     const { similarQuery, similarResult } = this.props;
-    if (schema.matchable && similarResult.shouldLoad) {
-      this.props.queryEntities({ query: similarQuery });
+    const showSimilar = entity?.schema?.matchable && !isPreview;
+    if (showSimilar && similarResult.shouldLoad) {
+      this.props.querySimilar({ query: similarQuery });
     }
 
     const { childrenResult, childrenQuery } = this.props;
-    if (schema.isA('Folder') && childrenResult.shouldLoad) {
+    if (entity?.schema?.isA('Folder') && childrenResult.shouldLoad) {
       this.props.queryEntities({ query: childrenQuery });
     }
   }
@@ -64,18 +64,18 @@ class EntityContextLoader extends PureComponent {
   }
 }
 
-
 const mapStateToProps = (state, ownProps) => {
   const { entityId, location } = ownProps;
-  const similarQuery = queryEntitySimilar(location, entityId);
-  const childrenQuery = queryFolderDocuments(location, entityId, undefined);
+  const similarQuery = entitySimilarQuery(location, entityId);
+  const childrenQuery = folderDocumentsQuery(location, entityId, undefined);
+  const expandQuery = entityReferencesQuery(entityId);
   return {
     entity: selectEntity(state, entityId),
-    content: selectDocumentContent(state, entityId),
     tagsResult: selectEntityTags(state, entityId),
-    referencesResult: selectEntityReferences(state, entityId),
     similarQuery,
-    similarResult: selectEntitiesResult(state, similarQuery),
+    similarResult: selectSimilarResult(state, similarQuery),
+    expandQuery,
+    expandResult: selectEntityExpandResult(state, expandQuery),
     childrenQuery,
     childrenResult: selectEntitiesResult(state, childrenQuery),
   };
@@ -83,13 +83,13 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = {
   queryEntities,
+  querySimilar,
+  queryEntityExpand,
   fetchEntity,
   fetchEntityTags,
-  fetchEntityReferences,
-  fetchDocumentContent,
 };
 
 export default compose(
   withRouter,
-  connect(mapStateToProps, mapDispatchToProps),
+  connect(mapStateToProps, mapDispatchToProps)
 )(EntityContextLoader);

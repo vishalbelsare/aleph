@@ -1,32 +1,37 @@
-from datetime import datetime
 from flask import Blueprint, request
 
-from aleph.core import db
-from aleph.model import Notification, Role
-from aleph.search import DatabaseQueryResult
-from aleph.logic.notifications import get_role_channels
+from aleph.search import NotificationsQuery
 from aleph.views.serializers import NotificationSerializer
-from aleph.views.util import jsonify, require
+from aleph.views.util import require
 
 
-blueprint = Blueprint('notifications_api', __name__)
+blueprint = Blueprint("notifications_api", __name__)
 
 
-@blueprint.route('/api/2/notifications', methods=['GET'])
+@blueprint.route("/api/2/notifications", methods=["GET"])
 def index():
+    """
+    ---
+    get:
+      summary: Get notifications
+      description: Get all the notifications for the user
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                - $ref: '#/components/schemas/QueryResponse'
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+          description: OK
+      tags:
+      - Notification
+    """
     require(request.authz.logged_in)
-    role = Role.by_id(request.authz.id)
-    query = Notification.by_channels(get_role_channels(role),
-                                     since=role.notified_at,
-                                     exclude_actor_id=role.id)
-    result = DatabaseQueryResult(request, query)
+    result = NotificationsQuery.handle(request)
     return NotificationSerializer.jsonify_result(result)
-
-
-@blueprint.route('/api/2/notifications', methods=['DELETE'])
-def mark_read():
-    require(request.authz.logged_in)
-    role = Role.by_id(request.authz.id)
-    role.notified_at = datetime.utcnow()
-    db.session.commit()
-    return jsonify({'status': 'ok'}, status=202)

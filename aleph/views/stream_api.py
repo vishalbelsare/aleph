@@ -1,45 +1,75 @@
 import logging
 from banal import ensure_list
-from flask.wrappers import Response
 from flask import Blueprint, request
+from prometheus_client import Counter
 
-from aleph.model import Audit
-from aleph.logic.audit import record_audit
-from aleph.index.entities import iter_entities
-from aleph.logic.entities.rdf import export_collection
-from aleph.views.util import get_db_collection
+from aleph.index.entities import iter_entities, PROXY_INCLUDES
 from aleph.views.util import require, stream_ijson
 
 log = logging.getLogger(__name__)
-blueprint = Blueprint('bulk_api', __name__)
+blueprint = Blueprint("bulk_api", __name__)
+
+STREAMED_ENTITIES = Counter(
+    "aleph_streamed_entities_total",
+    "Total number of streamed entities",
+)
+
+STREAMS = Counter(
+    "aleph_streams_total",
+    "Total number of entity streaming requests",
+)
 
 
-@blueprint.route('/api/2/entities/_stream')
-@blueprint.route('/api/2/collections/<int:collection_id>/_stream')
+@blueprint.route("/api/2/entities/_stream")
+@blueprint.route("/api/2/collections/<int:collection_id>/_stream")
 def entities(collection_id=None):
-    require(request.authz.can_stream())
-    log.debug("Stream entities [%r] begins... (coll: %s)",
-              request.authz, collection_id)
-    schemata = ensure_list(request.args.getlist('schema'))
-    excludes = ['text', 'roles', 'fingerprints']
-    includes = ensure_list(request.args.getlist('include'))
-    includes = [f for f in includes if f not in excludes]
+    """
+    ---
+    get:
+      summary: Stream collection entities.
+      description: >
+        Stream a JSON form of each entity in the given collection, or
+        throughout the entire database.
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/x-ndjson:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entity'
+      tags:
+      - Entity
+    """
     if collection_id is not None:
-        get_db_collection(collection_id, request.authz.READ)
-        record_audit(Audit.ACT_COLLECTION, id=collection_id)
-    entities = iter_entities(authz=request.authz,
-                             collection_id=collection_id,
-                             schemata=schemata,
-                             excludes=excludes,
-                             includes=includes)
-    return stream_ijson(entities)
+        require(request.authz.can(collection_id, request.authz.WRITE))
+    else:
+        require(request.authz.is_admin)
+    schemata = ensure_list(request.args.getlist("schema"))
+    includes = ensure_list(request.args.getlist("include"))
+    includes = includes or PROXY_INCLUDES
+    log.debug("Stream entities [%r] begins... (coll: %s)", request.authz, collection_id)
+    entities = iter_entities(
+        authz=request.authz,
+        collection_id=collection_id,
+        schemata=schemata,
+        includes=includes,
+    )
 
+    STREAMS.inc()
 
-@blueprint.route('/api/2/collections/<int:collection_id>/_rdf')
-def triples(collection_id):
-    require(request.authz.can_stream())
-    log.debug("Stream triples [%r] begins... (coll: %s)",
-              request.authz, collection_id)
-    collection = get_db_collection(collection_id, request.authz.READ)
-    record_audit(Audit.ACT_COLLECTION, id=collection_id)
-    return Response(export_collection(collection), mimetype='text/plain')
+    def generator(entities):
+        for entity in entities:
+            STREAMED_ENTITIES.inc()
+            yield entity
+
+    return stream_ijson(generator(entities))

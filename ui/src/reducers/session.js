@@ -1,38 +1,50 @@
 import { createReducer } from 'redux-act';
-import jwtDecode from 'jwt-decode';
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 
-import { loginWithToken, logout } from 'src/actions/sessionActions';
-import { fetchRole, updateRole } from 'src/actions';
+import { fetchMetadata, loginWithToken, logout } from 'actions';
+import timestamp from 'util/timestamp';
 
-const initialState = {
-  loggedIn: false,
-  sessionID: uuidv4(),
+const initialState = { loggedIn: false };
+
+const handleSession = (state) => {
+  // we track unique visitors using a session ID. The ID is
+  // stored in browser localStorage and rotated every couple
+  // of months in order to comply with privacy regulations.
+  const maxAge = timestamp() - 84600 * 30 * 6; // GDPR
+  if (state.sessionStart === undefined || state.sessionStart < maxAge) {
+    state.sessionId = undefined;
+  }
+  if (state.sessionId === undefined) {
+    state.sessionId = uuidv4();
+    state.sessionStart = timestamp();
+  }
+  return state;
 };
 
 const handleLogin = (state, token) => {
-  const data = jwtDecode(token);
-  return {
-    ...data,
+  if (!token) {
+    return handleSession(state);
+  }
+  return handleSession({
+    ...state,
     token,
     loggedIn: true,
-    sessionID: state.sessionID || uuidv4(),
-  };
+  });
 };
 
-const handleLogout = state => ({
-  loggedIn: false,
-  sessionID: state.sessionID || uuidv4(),
-});
+const handleLogout = (state, { redirect }) =>
+  handleSession({
+    logoutRedirect: redirect,
+    loggedIn: false,
+  });
 
-const storeRole = (state, { role }) => ({
-  ...state,
-  role,
-});
-
-export default createReducer({
-  [loginWithToken]: handleLogin,
-  [logout]: handleLogout,
-  [fetchRole.COMPLETE]: storeRole,
-  [updateRole.COMPLETE]: storeRole,
-}, initialState);
+export default createReducer(
+  {
+    [loginWithToken]: handleLogin,
+    [logout.COMPLETE]: handleLogout,
+    [logout.ERROR]: handleLogout,
+    [fetchMetadata.COMPLETE]: (state, { metadata }) =>
+      handleLogin(state, metadata?.token),
+  },
+  handleSession(initialState)
+);

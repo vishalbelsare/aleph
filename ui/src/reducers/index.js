@@ -1,39 +1,47 @@
 import { combineReducers } from 'redux';
 
+import messages from './messages';
 import metadata from './metadata';
+import mutation from './mutation';
 import session from './session';
 import config from './config';
 import statistics from './statistics';
 import entities from './entities';
-import entityReferences from './entityReferences';
 import entityTags from './entityTags';
-import documentContent from './documentContent';
+import values from './values';
 import collections from './collections';
 import collectionPermissions from './collectionPermissions';
-import collectionXrefIndex from './collectionXrefIndex';
-import collectionXrefMatches from './collectionXrefMatches';
+import entityMappings from './entityMappings';
 import results from './results';
-import alerts from './alerts';
+import entitySets from './entitySets';
+import entitySetItems from './entitySetItems';
+import roles from './roles';
 import notifications from './notifications';
-import queryLogs from './queryLogs';
+import systemStatus from './systemStatus';
+import exports from './exports';
+import bookmarks from './bookmarks';
 
 const rootReducer = combineReducers({
+  messages,
   metadata,
+  mutation,
   session,
   config,
   statistics,
   entities,
-  entityReferences,
-  documentContent,
-  alerts,
-  notifications,
   entityTags,
+  values,
+  roles,
+  notifications,
   collections,
   collectionPermissions,
-  collectionXrefIndex,
-  collectionXrefMatches,
-  queryLogs,
+  entitySets,
+  entitySetItems,
+  entityMappings,
   results,
+  systemStatus,
+  exports,
+  bookmarks,
 });
 
 export default rootReducer;

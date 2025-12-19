@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
 import { defineMessages, injectIntl } from 'react-intl';
 
-import { ErrorSection } from 'src/components/common';
+import { ErrorSection } from 'components/common';
 
 const messages = defineMessages({
   no_viewer: {
@@ -10,18 +10,19 @@ const messages = defineMessages({
   },
   ignored_file: {
     id: 'document.viewer.ignored_file',
-    defaultMessage: 'The system does not work with these types of files. Please download it so you’ll be able to see it.',
+    defaultMessage:
+      'The system does not work with these types of files. Please download it so you’ll be able to see it.',
   },
 });
 
-
-export class DefaultViewer extends React.PureComponent {
+export class DefaultViewer extends PureComponent {
   render() {
     const { intl, document } = this.props;
-    const message = document.error_message || intl.formatMessage(messages.ignored_file);
+    const backendMessage = document.getProperty('processingError').join(', ');
+    const message = backendMessage || intl.formatMessage(messages.ignored_file);
     return (
       <ErrorSection
-        visual="issue"
+        icon="issue"
         title={intl.formatMessage(messages.no_viewer)}
         description={message}
       />

@@ -1,0 +1,107 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+$pages-max-width: 1000px;
+$pages-padding: $aleph-grid-size * 2.5;
+
+@mixin large {
+  @media screen and (min-width: $pages-max-width) {
+    @content;
+  }
+}
+
+.Pages {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: stretch;
+  padding: $pages-padding;
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 6;
+    max-width: $pages-max-width;
+    @include rtlSupportInvertedProp(
+      padding,
+      left,
+      $aleph-grid-size * 0.5,
+      $aleph-grid-size * 0.5
+    );
+  }
+
+  &__title {
+    margin: 0;
+    border-bottom: 1px solid $aleph-border-color;
+    color: $dark-gray5;
+    font-size: $aleph-grid-size * 3.5;
+    padding: $pages-padding * 1.5 0 $pages-padding * 2;
+
+    @include large {
+      padding: $pages-padding * 2 $pages-padding $pages-padding * 2.5;
+    }
+  }
+
+  &__content-container {
+    display: flex;
+    flex-flow: row nowrap;
+    align-content: stretch;
+    align-items: stretch;
+    padding: $pages-padding 0;
+
+    @include large {
+      padding: $pages-padding;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 6;
+    color: $dark-gray5;
+    line-height: 1.5;
+    clear: both;
+
+    font-size: $aleph-grid-size * 1.7;
+    font-weight: normal;
+
+    a {
+      text-decoration: underline;
+    }
+  }
+
+  &__menu {
+    flex: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    width: 20%;
+    @include rtlSupportInvertedProp(margin, left, $pages-padding * 2, null);
+    min-width: 220px;
+
+    @media screen and (max-width: $aleph-screen-sm-max-width) {
+      display: none;
+    }
+
+    .#{$bp-ns}-menu-item {
+      .#{$bp-ns}-icon {
+        @include rtlSupportInvertedProp(margin, right, 12px, null);
+      }
+    }
+
+    .#{$bp-ns}-menu-header {
+      border: none;
+      @include rtlSupportInvertedProp(margin, left, 0, null);
+      margin-bottom: $aleph-grid-size;
+
+      .#{$bp-ns}-heading {
+        color: $blue1;
+        padding-top: 2px;
+      }
+    }
+
+    .#{$bp-ns}-menu-divider {
+      margin: $aleph-grid-size * 1.5 0;
+      border-color: $aleph-border-color;
+    }
+  }
+}

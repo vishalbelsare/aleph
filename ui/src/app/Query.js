@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import queryString from 'query-string';
-import ensureArray from 'src/util/ensureArray';
+import ensureArray from 'util/ensureArray';
+import { getGroupField } from 'components/SearchField/util';
 
 class Query {
   // State of a particular API query. This doesn't need to be specific to any one
@@ -11,11 +12,12 @@ class Query {
     this.state = state;
     this.context = context;
     this.queryName = queryName;
-
     this.setPlain('limit', Query.LIMIT);
   }
 
   static LIMIT = 30;
+  static LARGE = 200;
+  static MAX_LIMIT = 9999;
 
   static fromLocation(path, location, context, queryName) {
     const state = queryString.parse(location.search);
@@ -119,8 +121,8 @@ class Query {
     // (i.e. not through the context)
     const fieldPrefix = `${this.queryName}filter:`;
     return _.keys(this.state)
-      .filter(name => name.startsWith(fieldPrefix))
-      .map(name => name.substr(fieldPrefix.length));
+      .filter((name) => name.startsWith(fieldPrefix))
+      .map((name) => name.substr(fieldPrefix.length));
   }
 
   getFilter(name) {
@@ -137,6 +139,18 @@ class Query {
 
   removeFilter(name, value) {
     return this.remove(`filter:${name}`, value);
+  }
+
+  removeAllFilters() {
+    const state = _.cloneDeep(this.state);
+    const filters = this.filters();
+
+    const filterPrefix = `${this.queryName}filter:`;
+    filters.forEach((filterName) => {
+      state[`${filterPrefix}${filterName}`] = [];
+    });
+
+    return new Query(this.path, state, this.context, this.queryName);
   }
 
   clearFilter(name) {
@@ -162,6 +176,13 @@ class Query {
     return this.set('sort', `${name}:${direction}`);
   }
 
+  defaultSortBy(name, direction) {
+    if (!this.hasSort()) {
+      return this.sortBy(name, direction);
+    }
+    return this;
+  }
+
   limit(count) {
     return this.set('limit', `${count}`);
   }
@@ -170,12 +191,47 @@ class Query {
     return this.set('offset', `${count}`);
   }
 
-  addFacet(value) {
-    return this.add('facet', value);
+  addFacet(facet) {
+    const field = facet.isProperty ? `properties.${facet.name}` : facet.name;
+    let newQuery = this.add('facet', field)
+      .set(`facet_size:${field}`, facet.defaultSize || 10)
+      .set(`facet_total:${field}`, true);
+
+    if (field === 'dates' || facet.type === 'date') {
+      newQuery = newQuery.add(`facet_interval:${field}`, 'year');
+    }
+    if (facet.isProperty) {
+      newQuery = newQuery.set(`facet_type:${field}`, facet.type);
+    }
+    return newQuery;
   }
 
-  hasFacet(value) {
-    return this.getList('facet').indexOf(value) !== -1;
+  removeFacet(facet) {
+    const field = facet.isProperty ? `properties.${facet.name}` : facet.name;
+    return this.remove('facet', field)
+      .set(`facet_size:${field}`, undefined)
+      .set(`facet_total:${field}`, undefined)
+      .set(`facet_type:${field}`, undefined)
+      .remove(`facet_interval:${field}`, 'year');
+  }
+
+  getFacetType(field) {
+    const cleanedField = field
+      .replace('gte:', '')
+      .replace('lte:', '')
+      .replace('eq:', '');
+    return this.getString(`facet_type:${cleanedField}`);
+  }
+
+  hasFacet(field) {
+    return this.getList('facet').indexOf(field) !== -1;
+  }
+
+  defaultFacet(field, total = false) {
+    if (!this.hasFacet(field)) {
+      return this.addFacet(getGroupField(field));
+    }
+    return this;
   }
 
   clearFacets() {
@@ -183,9 +239,12 @@ class Query {
   }
 
   sameAs(other) {
-    return this.toLocation() === other.toLocation()
-      && queryString.stringify(this.context) === queryString.stringify(other.context)
-      && this.path === other.path;
+    return (
+      this.toLocation() === other.toLocation() &&
+      queryString.stringify(this.context) ===
+        queryString.stringify(other.context) &&
+      this.path === other.path
+    );
   }
 
   toLocation() {
@@ -196,16 +255,16 @@ class Query {
 
   toString() {
     // Return the full query string for this query, including implicit context.
-    if (!this.path) { return undefined; }
+    if (!this.path) {
+      return undefined;
+    }
     const query = queryString.stringify(this.toParams());
     return `${this.path}?${query}`;
   }
 
   toKey() {
     // Strip the parts of the query that are irrelevant to the result cache.
-    return this
-      .clear('offset')
-      .toString();
+    return this.clear('offset').clear('limit').clear('next_limit').toString();
   }
 
   toParams() {

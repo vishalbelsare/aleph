@@ -1,0 +1,39 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+$split-section-padding: 2 * $aleph-grid-size;
+
+.MappingSplitSection {
+  &-container {
+    width: 100%;
+    display: table;
+  }
+  width: 50%;
+  display: table-cell;
+
+  &:first-child {
+    @include rtlSupportInvertedProp(
+      padding,
+      right,
+      $split-section-padding,
+      null
+    );
+  }
+  &:last-child {
+    @include rtlSupportInvertedProp(
+      padding,
+      left,
+      $split-section-padding,
+      null
+    );
+  }
+
+  @media screen and (max-width: $aleph-screen-md-max-width) {
+    display: block;
+    width: 100%;
+    padding: $aleph-grid-size 0 !important;
+  }
+
+  &__title {
+    margin-top: 0;
+  }
+}

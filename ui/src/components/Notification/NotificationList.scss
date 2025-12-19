@@ -1,6 +1,13 @@
+@import 'app/variables.scss';
 
 .NotificationList {
+  .SortingBar {
+    margin-bottom: $aleph-grid-size;
+  }
+
+  &__items {
     list-style-type: none;
     padding: 0;
     margin: 0;
+  }
 }

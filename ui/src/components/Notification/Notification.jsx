@@ -1,43 +1,69 @@
 import React, { PureComponent } from 'react';
-import { FormattedRelative } from 'react-intl';
 
-import Role from 'src/components/common/Role';
-import Collection from 'src/components/common/Collection';
-import Entity from 'src/components/common/Entity';
+import {
+  Collection,
+  EntitySet,
+  Entity,
+  QueryText,
+  Role,
+  Skeleton,
+  ExportLink,
+  RelativeTime,
+} from 'src/components/common';
 
 import './Notification.scss';
 
-
 class Notification extends PureComponent {
   getParam(name) {
-    const { event, params } = this.props.notification;
+    const { notification, showCollectionLinks = true } = this.props;
+    const { event, params } = notification;
+
     const object = params[name];
     const type = event.params[name] || 'role';
     if (type === 'collection') {
-      return <Collection.Link collection={object} preview icon />;
+      if (showCollectionLinks) {
+        return <Collection.Link collection={object} icon />;
+      } else {
+        return <Collection.Label collection={object} icon={false} />;
+      }
     }
-    if (type === 'document' || type === 'entity') {
-      return <Entity.Link entity={object} preview icon />;
+    if (type === 'entity') {
+      return <Entity.Link entity={object} truncate={50} preview icon />;
+    }
+    if (type === 'entityset') {
+      return <EntitySet.Link entitySet={object} icon />;
     }
     if (type === 'alert') {
-      return object ? object.query : null;
+      return object ? <QueryText query={object.query} /> : null;
     }
     if (type === 'role') {
       return <Role.Label role={object} />;
     }
+    if (type === 'export') {
+      return object ? <ExportLink export_={object} icon="export" /> : null;
+    }
     return undefined;
   }
 
-  convertUTCDateToLocalDate = (date) => {
-    const newDate = new Date(date.getTime() + date.getTimezoneOffset() * 60 * 1000);
-    const offset = date.getTimezoneOffset() / 60;
-    const hours = date.getHours();
-    newDate.setHours(hours - offset);
-    return newDate;
-  }
+  renderSkeleton = () => (
+    <li className="Notification">
+      <div className="notification-action">
+        <Skeleton.Text type="span" length={50} />
+      </div>
+      <div className="timestamp">
+        <Skeleton.Text type="span" length={15} />
+      </div>
+    </li>
+  );
 
   render() {
-    const { event, id, created_at: createdAt } = this.props.notification;
+    const { isPending, notification } = this.props;
+
+    if (isPending) {
+      return this.renderSkeleton();
+    }
+
+    const { event, id, created_at: createdAt } = notification;
     const parts = event.template.split(/({{|}})/);
     const message = [];
 
@@ -50,20 +76,28 @@ class Notification extends PureComponent {
         paramActive = false;
       } else if (paramActive) {
         const param = this.getParam(token);
-        message.push((<span key={token} className="param">{param}</span>));
+        message.push(
+          <div key={token} className="param">
+            {param}
+          </div>
+        );
+      } else if (token.length === 0) {
+        return false;
       } else {
-        message.push(token);
+        message.push(
+          <div key={token} className="token">
+            {token}
+          </div>
+        );
       }
     });
 
-    const createdDate = this.convertUTCDateToLocalDate(new Date(createdAt));
-
     return (
       <li key={id} className="Notification">
+        <div className="notification-action">{message}</div>
         <div className="timestamp">
-          <FormattedRelative value={createdDate.toString()} />
+          <RelativeTime utcDate={createdAt} />
         </div>
-        {message}
       </li>
     );
   }

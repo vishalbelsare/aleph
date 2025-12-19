@@ -1,88 +1,116 @@
 import React, { Component, PureComponent } from 'react';
-import PropTypes from 'prop-types';
-import { Icon } from '@blueprintjs/core';
+import { Button, Classes, Icon, MenuItem, Spinner } from '@blueprintjs/core';
+import { Popover2 as Popover } from '@blueprintjs/popover2';
 import { Link } from 'react-router-dom';
-import { withRouter } from 'react-router';
 import truncateText from 'truncate';
 import { connect } from 'react-redux';
 import c from 'classnames';
 
-import { fetchCollection } from 'src/actions';
-import { selectCollection } from 'src/selectors';
-import getCollectionLink from 'src/util/getCollectionLink';
-import togglePreview from 'src/util/togglePreview';
+import { fetchCollection, queryCollections } from 'actions';
+import { selectCollection, selectCollectionsResult } from 'selectors';
+import { Skeleton, SelectWrapper } from 'components/common';
+import CollectionStatus from 'components/Collection/CollectionStatus';
+import getCollectionLink from 'util/getCollectionLink';
 
 import './Collection.scss';
 
-
 class CollectionLabel extends PureComponent {
+  getIcon(collection) {
+    if (collection.casefile) {
+      return 'briefcase';
+    } else if (collection.secret) {
+      return 'lock';
+    }
+    return 'database';
+  }
+
   render() {
     const {
-      collection, icon = true, label = true, truncate,
+      collection,
+      icon = true,
+      label = true,
+      updating = false,
+      truncate,
+      className,
     } = this.props;
-    if (collection === undefined || collection.id === undefined) {
-      return null;
-    }
 
-    let iconName = 'database';
-    const style = {};
-    if (collection.casefile) {
-      iconName = 'briefcase';
-    } else if (collection.secret) {
-      iconName = 'lock';
+    if (!collection?.id) {
+      if (collection?.isPending) {
+        return <Skeleton.Text type="span" length={15} />;
+      }
+      return null;
     }
 
     let text = collection.label;
     if (truncate) {
       text = truncateText(collection.label, truncate);
     }
-
+    const renderedIcon = updating ? (
+      <Spinner size="16" />
+    ) : (
+      <Icon icon={this.getIcon(collection)} />
+    );
     return (
-      <span className="CollectionLabel" title={collection.label}>
-        { icon && (<Icon icon={iconName} style={style} />)}
-        <span>{ label && text }</span>
+      <span
+        className={c('CollectionLabel', className)}
+        title={collection.label}
+      >
+        {icon && renderedIcon}
+        <span>{label && text}</span>
       </span>
     );
   }
 }
 
-
-class CollectionLink extends Component {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-  }
-
-  onClick(event) {
-    const { collection, history, preview } = this.props;
-    if (preview === true) {
-      event.preventDefault();
-      togglePreview(history, collection, 'collection');
-    }
-  }
-
+class CollectionLink extends PureComponent {
   render() {
-    const { collection, icon = true, className } = this.props;
-    if (collection === undefined || collection.links === undefined) {
-      return <Collection.Label collection={collection} icon={icon} />;
+    const { collection, className } = this.props;
+    const content = <Collection.Label {...this.props} />;
+    const link = getCollectionLink({ collection });
+    if (!link) {
+      return content;
     }
-    const link = getCollectionLink(collection);
     return (
-      <Link to={link} className={c('CollectionLink', className)} onClick={this.onClick}>
-        <Collection.Label collection={collection} icon={icon} />
+      <Link to={link} className={c('CollectionLink', className)}>
+        {content}
       </Link>
     );
   }
 }
 
+class CollectionUpdateStatus extends PureComponent {
+  render() {
+    const { collection, LabelComponent } = this.props;
+    const updating = !!collection?.status?.active;
+    const collectionLabel = (
+      <LabelComponent updating={updating} {...this.props} />
+    );
+
+    if (updating) {
+      return (
+        <Popover
+          lazy
+          interactionKind="hover"
+          autoFocus={false}
+          enforceFocus={false}
+          popoverClassName="CollectionUpdateStatus__popover"
+          content={
+            <CollectionStatus
+              collection={collection}
+              showCancel={false}
+              className={c(Classes.CALLOUT, Classes.INTENT_PRIMARY)}
+            />
+          }
+        >
+          {collectionLabel}
+        </Popover>
+      );
+    }
+    return collectionLabel;
+  }
+}
 
 class CollectionLoad extends Component {
-  static propTypes = {
-    id: PropTypes.string.isRequired,
-    children: PropTypes.func.isRequired,
-    renderWhenLoading: PropTypes.node.isRequired,
-  }
-
   componentDidMount() {
     this.fetchIfNeeded();
   }
@@ -100,23 +128,104 @@ class CollectionLoad extends Component {
 
   render() {
     const { collection, children, renderWhenLoading } = this.props;
-    if (collection.isLoading && renderWhenLoading !== undefined) {
+    if (collection.isPending && renderWhenLoading !== undefined) {
       return renderWhenLoading;
     }
     return children(collection);
   }
 }
 
-const mapStateToProps = (state, ownProps) => ({
+class CollectionSelect extends Component {
+  constructor(props) {
+    super(props);
+    this.renderCollection = this.renderCollection.bind(this);
+    this.onSelectCollection = this.onSelectCollection.bind(this);
+  }
+
+  componentDidMount() {
+    this.fetchIfNeeded();
+  }
+
+  componentDidUpdate() {
+    this.fetchIfNeeded();
+  }
+
+  onSelectCollection(collection, event) {
+    event.stopPropagation();
+    this.props.onSelect(collection);
+  }
+
+  renderCollection = (collection, { handleClick }) => (
+    <MenuItem
+      key={collection.id}
+      onClick={handleClick}
+      text={<CollectionLabel collection={collection} icon label />}
+    />
+  );
+
+  fetchIfNeeded() {
+    const { query, result } = this.props;
+    if (result.shouldLoad) {
+      this.props.queryCollections({ query });
+    }
+  }
+
+  render() {
+    const { buttonProps, collection, result } = this.props;
+    const label = collection ? (
+      <CollectionLabel collection={collection} icon={false} />
+    ) : (
+      buttonProps.label
+    );
+
+    return (
+      <SelectWrapper
+        itemRenderer={this.renderCollection}
+        items={result.results}
+        onItemSelect={this.onSelectCollection}
+        popoverProps={{
+          minimal: true,
+          fill: true,
+        }}
+        inputProps={{
+          fill: true,
+        }}
+        filterable={false}
+        resetOnClose
+        resetOnSelect
+      >
+        <Button fill text={label} icon="briefcase" alignText="left" />
+      </SelectWrapper>
+    );
+  }
+}
+
+const loadMapStateToProps = (state, ownProps) => ({
   collection: selectCollection(state, ownProps.id),
 });
+
+const selectMapStateToProps = (state, ownProps) => {
+  const { query } = ownProps;
+  return {
+    query,
+    result: selectCollectionsResult(state, query),
+  };
+};
 
 class Collection {
   static Label = CollectionLabel;
 
-  static Link = withRouter(CollectionLink);
+  static Status = CollectionUpdateStatus;
 
-  static Load = connect(mapStateToProps, { fetchCollection })(CollectionLoad);
+  static Link = CollectionLink;
+
+  static Load = connect(loadMapStateToProps, { fetchCollection })(
+    CollectionLoad
+  );
+
+  static Select = connect(selectMapStateToProps, { queryCollections })(
+    CollectionSelect
+  );
 }
 
 export default Collection;

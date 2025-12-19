@@ -1,0 +1,75 @@
+@import 'app/variables.scss';
+
+.QuickLinks {
+  // grid fallback
+  display: flex;
+  flex-wrap: wrap;
+
+  padding: 0 5px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: $aleph-grid-size * 1.5 $aleph-grid-size * 1.5;
+  @media screen and (max-width: $aleph-screen-sm-max-width) {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  &__item {
+    flex: 0 0 25%;
+
+    text-decoration: none !important;
+
+    &__content {
+      border-radius: 5px;
+      box-shadow: $pt-elevation-shadow-2 !important;
+      transition: box-shadow 0.1s ease-in-out;
+      cursor: pointer !important;
+      height: 100%;
+      width: 100%;
+      text-align: center;
+      align-self: center;
+      padding: $aleph-grid-size * 0.5 $aleph-grid-size;
+
+      &:hover {
+        background: white !important;
+        box-shadow: $pt-elevation-shadow-3 !important;
+      }
+    }
+
+    &__image {
+      min-height: $aleph-grid-size * 10;
+      margin: $aleph-grid-size;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: 50% 50%;
+      position: relative;
+      border-radius: 5px;
+
+      &:after {
+        background: rgba($white, 0.6);
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        content: '';
+      }
+    }
+
+    &__text {
+      text-align: center;
+      padding: 5px 15px 15px;
+      margin: 0;
+      line-height: 1.4;
+      color: $blue1 !important;
+      font-weight: bold;
+      display: table;
+      width: 100%;
+
+      p {
+        vertical-align: middle;
+        margin: 0;
+        display: table-cell;
+      }
+    }
+  }
+}

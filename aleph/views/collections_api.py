@@ -1,125 +1,441 @@
-from banal import ensure_list, keys_values
+from aleph.settings import SETTINGS
+from banal import ensure_list
 from flask import Blueprint, request
 from werkzeug.exceptions import BadRequest
-from followthemoney import model
-from followthemoney.exc import InvalidMapping
 
-from aleph.core import db, settings
-from aleph.authz import Authz
-from aleph.model import Role, Audit, Collection
+from aleph.core import db
 from aleph.search import CollectionsQuery
-from aleph.logic.collections import create_collection, refresh_collection
-from aleph.logic.collections import delete_collection, update_collection
-from aleph.logic.documents import process_documents
-from aleph.logic.entities import bulk_load_query, bulk_write
-from aleph.logic.audit import record_audit
-from aleph.logic.util import collection_url
-from aleph.views.context import enable_cache
-from aleph.views.forms import CollectionCreateSchema, CollectionUpdateSchema
+from aleph.queues import queue_task, get_status, cancel_queue
+from aleph.logic.collections import create_collection, update_collection
+from aleph.logic.collections import delete_collection, refresh_collection
+from aleph.logic.collections import get_deep_collection
+from aleph.logic.entitysets import save_entityset_item
+from aleph.index.collections import update_collection_stats
+from aleph.logic.processing import bulk_write
 from aleph.views.serializers import CollectionSerializer
-from aleph.views.util import get_db_collection, get_index_collection
-from aleph.views.util import require, parse_request
-from aleph.views.util import render_xml, get_flag
+from aleph.views.util import get_db_collection, get_index_collection, get_entityset
+from aleph.views.util import require, parse_request, jsonify
+from aleph.views.util import get_flag, get_session_id
 
-blueprint = Blueprint('collections_api', __name__)
+blueprint = Blueprint("collections_api", __name__)
 
 
-@blueprint.route('/api/2/collections', methods=['GET'])
+@blueprint.route("", methods=["GET"])
 def index():
+    """
+    ---
+    get:
+      summary: List collections
+      description: >-
+        Returns a list of collections matching a given query. Returns all the
+        collections accessible by a user if no query is given.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionsResponse'
+      tags:
+      - Collection
+    """
+    require(request.authz.can_browse_anonymous)
     result = CollectionsQuery.handle(request)
     return CollectionSerializer.jsonify_result(result)
 
 
-@blueprint.route('/api/2/sitemap.xml')
-def sitemap():
-    enable_cache(vary_user=False)
-    collections = []
-    for collection in Collection.all_authz(Authz.from_role(None)):
-        updated_at = collection.updated_at.date().isoformat()
-        updated_at = max(settings.SITEMAP_FLOOR, updated_at)
-        collections.append({
-            'url': collection_url(collection.id),
-            'updated_at': updated_at
-        })
-    return render_xml('sitemap.xml', collections=collections)
-
-
-@blueprint.route('/api/2/collections', methods=['POST', 'PUT'])
+@blueprint.route("", methods=["POST", "PUT"])
 def create():
-    require(request.authz.logged_in)
-    data = parse_request(CollectionCreateSchema)
-    role = Role.by_id(request.authz.id)
-    sync = get_flag('sync')
-    collection = create_collection(data, role=role, sync=sync)
-    return CollectionSerializer.jsonify(collection)
+    """
+    ---
+    post:
+      summary: Create a collection
+      description: Create a collection with the given metadata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionCreate'
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+    """
+    require(request.authz.session_write)
+    data = parse_request("CollectionCreate")
+    sync = get_flag("sync", True)
+    try:
+        collection = create_collection(data, request.authz, sync=sync)
+    except ValueError:
+        raise BadRequest()
+    return view(collection.get("id"))
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>', methods=['GET'])
+@blueprint.route("/<int:collection_id>", methods=["GET"])
 def view(collection_id):
-    collection = get_index_collection(collection_id)
-    record_audit(Audit.ACT_COLLECTION, id=collection_id)
-    return CollectionSerializer.jsonify(collection)
+    """
+    ---
+    get:
+      summary: Get a collection
+      description: Return the collection with id `collection_id`
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionDeep'
+      tags:
+      - Collection
+    """
+    require(request.authz.can_browse_anonymous)
+    data = get_index_collection(collection_id)
+    cobj = get_db_collection(collection_id)
+    if get_flag("refresh", False):
+        update_collection_stats(collection_id, ["schema"])
+    data.update(get_deep_collection(cobj))
+    return CollectionSerializer.jsonify(data)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>', methods=['POST', 'PUT'])  # noqa
+@blueprint.route("/<int:collection_id>", methods=["POST", "PUT"])
 def update(collection_id):
+    """
+    ---
+    post:
+      summary: Update a collection
+      description: >
+        Change collection metadata and update statistics.
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionUpdate'
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+    """
     collection = get_db_collection(collection_id, request.authz.WRITE)
-    data = parse_request(CollectionUpdateSchema)
-    sync = get_flag('sync')
-    collection.update(data)
+    data = parse_request("CollectionUpdate")
+    sync = get_flag("sync")
+    collection.update(data, request.authz)
     db.session.commit()
     data = update_collection(collection, sync=sync)
     return CollectionSerializer.jsonify(data)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>/process', methods=['POST', 'PUT'])  # noqa
-def process(collection_id):
+@blueprint.route("/<int:collection_id>/reingest", methods=["POST", "PUT"])
+def reingest(collection_id):
+    """
+    ---
+    post:
+      summary: Re-ingest a collection
+      description: >
+        Trigger a process to re-parse the content of all documents stored
+        in the collection with id `collection_id`.
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      - in: query
+        name: index
+        description: Index documents while they're being processed.
+        schema:
+          type: boolean
+      responses:
+        '202':
+          description: Accepted
+      tags:
+      - Collection
+    """
     collection = get_db_collection(collection_id, request.authz.WRITE)
-    # re-process the documents
-    process_documents.delay(collection_id=collection.id)
-    return ('', 204)
+    index = get_flag("index", False)
+    queue_task(
+        collection, SETTINGS.STAGE_REINGEST, job_id=get_session_id(), index=index
+    )
+    return ("", 202)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>/mapping', methods=['POST', 'PUT'])  # noqa
-def mapping_process(collection_id):
+@blueprint.route("/<int:collection_id>/reindex", methods=["POST", "PUT"])
+def reindex(collection_id):
+    """
+    ---
+    post:
+      summary: Re-index a collection
+      description: >
+        Re-index the entities in the collection with id `collection_id`
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      - in: query
+        description: Delete the index before re-generating it.
+        name: flush
+        schema:
+          type: boolean
+      responses:
+        '202':
+          description: Accepted
+      tags:
+      - Collection
+    """
     collection = get_db_collection(collection_id, request.authz.WRITE)
-    require(request.authz.can_bulk_import())
-    # TODO: we need to look into possible abuse of mapping load path for local
-    # path access on the machine running the mapping. Until then, this action
-    # must be restricted to admins:
-    require(request.authz.is_admin)
-    if not request.is_json:
-        raise BadRequest()
-    data = request.get_json().get(collection.foreign_id)
-    for query in keys_values(data, 'queries', 'query'):
-        try:
-            model.make_mapping(query)
-            bulk_load_query.apply_async([collection.id, query], priority=6)
-        except InvalidMapping as invalid:
-            raise BadRequest(invalid)
-    return ('', 204)
+    flush = get_flag("flush", False)
+    queue_task(collection, SETTINGS.STAGE_REINDEX, job_id=get_session_id(), flush=flush)
+    return ("", 202)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>/_bulk', methods=['POST'])  # noqa
+@blueprint.route("/<int:collection_id>/_bulk", methods=["POST"])
+@blueprint.route("/<int:collection_id>/bulk", methods=["POST"])
 def bulk(collection_id):
+    """
+    ---
+    post:
+      summary: Load entities into a collection
+      description: >
+        Bulk load entities into the collection with id `collection_id`
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      - description: >-
+          safe=True means that the data cannot be trusted and that file checksums should be removed.
+          Flag is only available for admins. Default True.
+        in: query
+        name: safe
+        schema:
+          type: boolean
+      - description: >-
+          clean=True means that the data cannot be trusted and that the data should be cleaned from invalid values.
+          Flag is only available for admins. Default True.
+        in: query
+        name: clean
+        schema:
+          type: boolean
+      requestBody:
+        description: Entities to be loaded.
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/EntityUpdate'
+      responses:
+        '204':
+          description: No Content
+      tags:
+      - Collection
+    """
     collection = get_db_collection(collection_id, request.authz.WRITE)
     require(request.authz.can_bulk_import())
-    merge = get_flag('merge', default=False)
+    job_id = get_session_id()
+    entityset = request.args.get("entityset_id")
+    if entityset is not None:
+        entityset = get_entityset(entityset, request.authz.WRITE)
 
-    # This will disable certain security measures in order to allow bulk
-    # loading of document data.
-    unsafe = get_flag('unsafe', default=False)
-    unsafe = unsafe and request.authz.is_admin
+    # This will disable (if False) checksum security measures in order to allow bulk
+    # loading of document data:
+    safe = get_flag("safe", default=True)
+    # Flag is only available for admins:
+    if not request.authz.is_admin:
+        safe = True
 
+    # This will disable (if False) values validation for all types of all entities / properties
+    # (will pass cleaned=True to the model.get_proxy() in the aleph/logic/processing.py)
+    clean = get_flag("clean", default=True)
+    # Flag is only available for admins:
+    if not request.authz.is_admin:
+        clean = True
+
+    # Let UI tools change the entities created by this:
+    mutable = get_flag("mutable", default=False)
     entities = ensure_list(request.get_json(force=True))
-    bulk_write(collection, entities, merge=merge, unsafe=unsafe)
-    refresh_collection(id)
-    return ('', 204)
+    entity_ids = list()
+    for entity_id in bulk_write(
+        collection,
+        entities,
+        safe=safe,
+        mutable=mutable,
+        clean=clean,
+        role_id=request.authz.id,
+    ):
+        entity_ids.append(entity_id)
+        if entityset is not None:
+            save_entityset_item(
+                entityset,
+                collection,
+                entity_id,
+                added_by_id=request.authz.id,
+            )
+    collection.touch()
+    db.session.commit()
+    queue_task(collection, SETTINGS.STAGE_INDEX, job_id=job_id, entity_ids=entity_ids)
+    return ("", 204)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>', methods=['DELETE'])
-def delete(collection_id):
+@blueprint.route("/<int:collection_id>/status", methods=["GET"])
+def status(collection_id):
+    """
+    ---
+    get:
+      summary: Check processing status of a collection
+      description: >
+        Return the task queue status for the collection with id `collection_id`
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionStatus'
+      tags:
+      - Collection
+    """
+    collection = get_db_collection(collection_id, request.authz.READ)
+    request.rate_limit = None
+    return jsonify(get_status(collection))
+
+
+@blueprint.route("/<int:collection_id>/status", methods=["DELETE"])
+def cancel(collection_id):
+    """
+    ---
+    delete:
+      summary: Cancel processing of a collection
+      description: >
+        Cancel all queued tasks for the collection with id `collection_id`
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionStatus'
+          description: OK
+      tags:
+      - Collection
+    """
     collection = get_db_collection(collection_id, request.authz.WRITE)
-    sync = get_flag('sync', default=True)
-    delete_collection(collection, sync=sync)
-    return ('', 204)
+    cancel_queue(collection)
+    refresh_collection(collection_id)
+    return ("", 204)
+
+
+@blueprint.route("/<int:collection_id>", methods=["DELETE"])
+def delete(collection_id):
+    """
+    ---
+    delete:
+      summary: Delete a collection
+      description: Delete the collection with id `collection_id`
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      - in: query
+        description: Wait for delete to finish in backend.
+        name: sync
+        schema:
+          type: boolean
+      - in: query
+        description: Delete only the contents, but not the collection itself.
+        name: keep_metadata
+        schema:
+          type: boolean
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Collection
+    """
+    collection = get_db_collection(collection_id, request.authz.WRITE)
+    keep_metadata = get_flag("keep_metadata", default=False)
+    sync = get_flag("sync", default=True)
+    delete_collection(collection, keep_metadata=keep_metadata, sync=sync)
+    return ("", 204)
+
+
+@blueprint.route("/<int:collection_id>/touch", methods=["POST", "PUT"])
+def touch(collection_id):
+    """
+    ---
+    post:
+      summary: Touch a collection
+      description: >
+        Set the timestamp for the most recent change to the data in collection `collection_id`.
+      parameters:
+      - description: The collection ID.
+        in: path
+        name: collection_id
+        required: true
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '202':
+          description: Accepted
+      tags:
+      - Collection
+    """
+    collection = get_db_collection(collection_id, request.authz.is_admin)
+    collection.touch()
+    db.session.commit()
+    refresh_collection(collection_id)
+    return ("", 202)

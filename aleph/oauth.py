@@ -1,127 +1,116 @@
-import jwt
-from urllib.request import urlopen
-import base64
-import json
 import logging
-from cryptography.x509 import load_pem_x509_certificate
-from cryptography.hazmat.backends import default_backend
-from flask_oauthlib.client import OAuth
+from authlib.jose import JsonWebToken, JsonWebKey
+from authlib.integrations.flask_client import OAuth
+from authlib.jose.errors import DecodeError
 
-from aleph import signals, settings
+from aleph.settings import SETTINGS
+from aleph.util import is_auto_admin
 
 oauth = OAuth()
 log = logging.getLogger(__name__)
 
 
-def configure_oauth(app):
-    if settings.OAUTH:
-        oauth.provider = oauth.remote_app(
-            name=settings.OAUTH_NAME,
-            consumer_key=settings.OAUTH_KEY,
-            consumer_secret=settings.OAUTH_SECRET,
-            request_token_params={
-                'scope': settings.OAUTH_SCOPE
-            },
-            base_url=settings.OAUTH_BASE_URL,
-            request_token_url=settings.OAUTH_REQUEST_TOKEN_URL,
-            access_token_method=settings.OAUTH_TOKEN_METHOD,
-            access_token_url=settings.OAUTH_TOKEN_URL,
-            authorize_url=settings.OAUTH_AUTHORIZE_URL
+class OAuthError(Exception):
+    pass
+
+
+def configure_oauth(app, cache):
+    if SETTINGS.OAUTH:
+        authorize_params = {}
+        if SETTINGS.OAUTH_AUDIENCE:
+            authorize_params["audience"] = SETTINGS.OAUTH_AUDIENCE
+        oauth.provider = oauth.register(
+            name=SETTINGS.OAUTH_HANDLER,
+            client_id=SETTINGS.OAUTH_KEY,
+            client_secret=SETTINGS.OAUTH_SECRET,
+            client_kwargs={"scope": SETTINGS.OAUTH_SCOPE},
+            server_metadata_url=SETTINGS.OAUTH_METADATA_URL,
+            authorize_params=authorize_params,
         )
-    oauth.init_app(app)
+    oauth.init_app(app, cache=cache)
     return oauth
 
 
-@signals.handle_oauth_session.connect
-def handle_azure_oauth(sender, provider=None, oauth=None):
-    from aleph.model import Role
-    if 'login.microsoftonline.com' not in provider.base_url:
-        return
+def _parse_access_token(provider, oauth_token):
+    token = oauth_token.get("access_token")
+    if token is None:
+        return {}
 
-    # Get incoming token, extract header for use with certificate verification
-    id_token = oauth.get('id_token')
-    headerbit = id_token.split('.')[0]
-    headerbit = base64.b64decode(headerbit).decode('utf8')
-    headerbit = json.loads(headerbit)
+    def load_key(header, payload):
+        jwk_set = JsonWebKey.import_key_set(provider.fetch_jwk_set(force=True))
+        return jwk_set.find_by_kid(header.get("kid"))
 
-    # Load cert from MS - can be cached for upwards of 24hrs, not done now
-    cert_loc = 'https://login.microsoftonline.com/common/discovery/keys'
-    cert_data = json.loads(urlopen(cert_loc).read())
-    pemstart = "-----BEGIN CERTIFICATE-----\n"
-    pemend = "\n-----END CERTIFICATE-----\n"
-    # Find correct cert based on header
-    for key in cert_data['keys']:
-        if headerbit['kid'] == key['kid'] and headerbit['x5t'] == key['x5t']:
-            mspubkey = key['x5c'][0]
-            break
-    cert_str = pemstart + mspubkey + pemend
-    cert_obj = load_pem_x509_certificate(cert_str.encode('ascii'),
-                                         default_backend())
-    public_key = cert_obj.public_key()
-
-    # Decode incoming token and verify against the MS cert
-    token_data = jwt.decode(id_token, public_key, verify=True,
-                            audience=settings.OAUTH_KEY)
-
-    # All Ok, move on
-    user_id = 'azure:%s' % token_data['upn']
-    return Role.load_or_create(user_id, Role.USER, token_data['name'],
-                               email=token_data['upn'])
+    metadata = provider.load_server_metadata()
+    algs = metadata.get("id_token_signing_alg_values_supported", ["RS256"])
+    jwt = JsonWebToken(algs)
+    claims = {"exp": {"essential": True}}
+    return jwt.decode(token, key=load_key, claims_options=claims)
 
 
-@signals.handle_oauth_session.connect
-def handle_google_oauth(sender, provider=None, oauth=None):
-    from aleph.model import Role
-    if 'googleapis.com' not in provider.base_url:
-        return
+def _get_groups(provider, oauth_token, id_token):
+    """Groups are not standardised in OIDC, so this is provider-specific."""
+    try:
+        access_token = _parse_access_token(provider, oauth_token)
+    except DecodeError:
+        # Failed to parse the access_token as JWT. Most probably, the required
+        # information about groups is in the id_token.
+        access_token = {}
 
-    token = (oauth.get('access_token'), '')
-    me = provider.get('userinfo', token=token)
-    user_id = 'google:%s' % me.data.get('id')
-    return Role.load_or_create(user_id, Role.USER, me.data.get('name'),
-                               email=me.data.get('email'))
+    groups = []
+
+    # Amazon Cognito
+    groups.extend(access_token.get("cognito:groups", []))
+
+    # Okta
+    groups.extend(id_token.get("groups", []))
+
+    # ADFS
+    groups.append(id_token.get("group"))
+
+    # RedHat KeyCloak
+    clients = access_token.get("resource_access", {})
+    client = clients.get(provider.client_id, {})
+    groups.extend(client.get("roles", []))
+
+    # Auth0
+    groups.extend(access_token.get("permissions", []))
+
+    # Please feel free to provider PRs for further providers.
+
+    return set([g for g in groups if g is not None])
 
 
-@signals.handle_oauth_session.connect
-def handle_facebook_oauth(sender, provider=None, oauth=None):
-    from aleph.model import Role
-    if 'facebook.com' not in provider.base_url:
-        return
+def handle_oauth(provider, oauth_token):
+    from aleph.model import Role, RoleBlockedError
 
-    token = (oauth.get('access_token'), '')
-    me = provider.get('me?fields=id,name,email', token=token)
-    user_id = 'facebook:%s' % me.data.get('id')
-    return Role.load_or_create(user_id, Role.USER, me.data.get('name'),
-                               email=me.data.get('email'))
-
-
-@signals.handle_oauth_session.connect
-def handle_keycloak_oauth(sender, provider=None, oauth=None):
-    from aleph.model import Role
-    superuser_role = 'superuser'
-
-    if 'secure.occrp.org' not in provider.base_url:
-        return
-
-    access_token = oauth.get('access_token')
-    token_data = jwt.decode(access_token, verify=False)
-    clients = token_data.get('resource_access', {})
-    client = clients.get(provider.consumer_key, {})
-    roles = set(client.get('roles', []))
-    is_admin = superuser_role in roles
-
-    user_id = 'kc:%s' % token_data.get('email')
-    if token_data.get('idashboard'):
-        user_id = 'idashboard:user:%s' % token_data.get('idashboard')
-    role = Role.load_or_create(user_id, Role.USER,
-                               token_data.get('name'),
-                               email=token_data.get('email'),
-                               is_admin=is_admin)
+    token = provider.parse_id_token(oauth_token)
+    if token is None:
+        raise OAuthError()
+    name = token.get("name", token.get("given_name"))
+    email = token.get("email", token.get("upn"))
+    role_id = "%s:%s" % (SETTINGS.OAUTH_HANDLER, token.get("sub", email))
+    role = Role.by_foreign_id(role_id)
+    if SETTINGS.OAUTH_MIGRATE_SUB and role is None:
+        role = Role.by_email(email)
+        if role is not None:
+            role.foreign_id = role_id
+            role.update({"name": name})
+    if role is None:
+        role = Role.load_or_create(
+            role_id, Role.USER, name, email=email, is_admin=is_auto_admin(email)
+        )
+    if role.is_blocked:
+        raise RoleBlockedError()
+    if not role.is_actor:
+        raise OAuthError()
     role.clear_roles()
-    for role_name in roles:
-        group_role = Role.load_or_create('kc:%s' % role_name,
-                                         Role.GROUP,
-                                         role_name)
+
+    for group in _get_groups(provider, oauth_token, token):
+        if group == SETTINGS.OAUTH_ADMIN_GROUP:
+            role.is_admin = True
+            continue
+        foreign_id = "group:%s" % group
+        group_role = Role.load_or_create(foreign_id, Role.GROUP, group)
         role.add_role(group_role)
         log.debug("User %r is member of %r", role, group_role)
     return role

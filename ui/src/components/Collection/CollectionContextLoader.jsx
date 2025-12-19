@@ -1,13 +1,22 @@
 import { PureComponent } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { fetchCollection, fetchCollectionXrefIndex } from 'src/actions';
-import { selectCollection, selectCollectionXrefIndex } from 'src/selectors';
 
+import withRouter from 'app/withRouter';
+import { collectionXrefFacetsQuery } from 'queries';
+import { fetchCollection, queryCollectionXref, forceMutate } from 'actions';
+import { selectCollection, selectCollectionXrefResult } from 'selectors';
+import timestamp from 'util/timestamp';
 
 class CollectionContextLoader extends PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = { timeout: null };
+    this.fetchRefresh = this.fetchRefresh.bind(this);
+  }
+
   componentDidMount() {
+    this.fetchRefresh();
     this.fetchIfNeeded();
   }
 
@@ -15,16 +24,37 @@ class CollectionContextLoader extends PureComponent {
     this.fetchIfNeeded();
   }
 
+  componentWillUnmount() {
+    clearTimeout(this.state.timeout);
+  }
+
   fetchIfNeeded() {
     const { collectionId, collection } = this.props;
-    if (collection.shouldLoad) {
-      this.props.fetchCollection({ id: collectionId });
+
+    if (collection.shouldLoadDeep) {
+      const refresh = collection.shallow === false;
+      this.props.fetchCollection({ id: collectionId, refresh });
     }
 
-    const { xrefIndex } = this.props;
-    if (xrefIndex.shouldLoad) {
-      this.props.fetchCollectionXrefIndex({ id: collectionId });
+    const { xrefResult, xrefQuery } = this.props;
+    if (xrefResult.shouldLoad) {
+      this.props.queryCollectionXref({ query: xrefQuery, result: xrefResult });
     }
+  }
+
+  fetchRefresh() {
+    const { collection } = this.props;
+    const { status } = collection;
+    clearTimeout(this.state.timeout);
+    const staleDuration = status.active ? 3000 : 30000;
+    const age = timestamp() - collection.loadedAt;
+    const shouldRefresh = age > staleDuration && !collection.isPending;
+    if (shouldRefresh) {
+      // this.props.forceMutate();
+      this.props.fetchCollection(collection);
+    }
+    const timeout = setTimeout(this.fetchRefresh, 1000);
+    this.setState({ timeout });
   }
 
   render() {
@@ -32,16 +62,23 @@ class CollectionContextLoader extends PureComponent {
   }
 }
 
-
 const mapStateToProps = (state, ownProps) => {
-  const { collectionId } = ownProps;
+  const { location, collectionId } = ownProps;
+  const xrefQuery = collectionXrefFacetsQuery(location, collectionId);
   return {
     collection: selectCollection(state, collectionId),
-    xrefIndex: selectCollectionXrefIndex(state, collectionId),
+    xrefQuery,
+    xrefResult: selectCollectionXrefResult(state, xrefQuery),
   };
 };
-const mapDispatchToProps = { fetchCollection, fetchCollectionXrefIndex };
+
+const mapDispatchToProps = {
+  forceMutate,
+  fetchCollection,
+  queryCollectionXref,
+};
+
 export default compose(
   withRouter,
-  connect(mapStateToProps, mapDispatchToProps),
+  connect(mapStateToProps, mapDispatchToProps)
 )(CollectionContextLoader);

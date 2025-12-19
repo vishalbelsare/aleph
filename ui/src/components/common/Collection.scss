@@ -1,6 +1,21 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
 
 .CollectionLabel {
-    .bp3-icon {
-        margin-right: 0.3em;
+  .#{$bp-ns}-icon,
+  .#{$bp-ns}-spinner {
+    @include rtlSupportInvertedProp(margin, right, $aleph-icon-padding, null);
+  }
+
+  .#{$bp-ns}-spinner {
+    display: inline-block;
+  }
+}
+
+.CollectionUpdateStatus {
+  &__popover {
+    .#{$bp-ns}-popover2-arrow-fill {
+      fill: $light-gray4 !important;
     }
+  }
 }

@@ -1,21 +1,22 @@
 import React, { Component, PureComponent } from 'react';
-import {
-  Button, Checkbox, Dialog, Intent,
-} from '@blueprintjs/core';
+import { Button, Classes, Callout, Checkbox, Intent } from '@blueprintjs/core';
 import { defineMessages, FormattedMessage, injectIntl } from 'react-intl';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { updateCollectionPermissions, fetchCollectionPermissions } from 'src/actions';
-import { selectCollectionPermissions } from 'src/selectors';
-import { Role } from 'src/components/common';
-import { showSuccessToast, showWarningToast } from 'src/app/toast';
+import {
+  updateCollectionPermissions,
+  fetchCollectionPermissions,
+} from 'actions';
+import { selectCollectionPermissions } from 'selectors';
+import { Role } from 'components/common';
+import FormDialog from 'dialogs/common/FormDialog';
+import { showSuccessToast, showWarningToast } from 'app/toast';
 
 import './CollectionAccessDialog.scss';
 
-
 const messages = defineMessages({
   title: {
-    id: 'collection.edit.title',
+    id: 'collection.edit.access_title',
     defaultMessage: 'Access control',
   },
   save_success: {
@@ -31,7 +32,6 @@ const messages = defineMessages({
     defaultMessage: 'Save changes',
   },
 });
-
 
 class PermissionRow extends PureComponent {
   render() {
@@ -58,7 +58,6 @@ class PermissionRow extends PureComponent {
   }
 }
 
-
 class CollectionAccessDialog extends Component {
   constructor(props) {
     super(props);
@@ -68,7 +67,7 @@ class CollectionAccessDialog extends Component {
     };
     this.onAddRole = this.onAddRole.bind(this);
     this.onToggle = this.onToggle.bind(this);
-    this.onSave = this.onSave.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
   }
 
   componentDidMount() {
@@ -77,9 +76,11 @@ class CollectionAccessDialog extends Component {
 
   componentDidUpdate(prevProps) {
     const { collection, permissions } = this.props;
-    if (prevProps.collection
-      && collection.id !== undefined
-      && prevProps.collection.id !== collection.id) {
+    if (
+      prevProps.collection &&
+      collection.id !== undefined &&
+      prevProps.collection.id !== collection.id
+    ) {
       this.fetchPermissions();
     }
     if (!this.state.permissions.length && permissions.results) {
@@ -87,22 +88,22 @@ class CollectionAccessDialog extends Component {
     }
   }
 
-  onAddRole(role) {
+  onAddRole(role, query) {
     const { permissions } = this.state;
-    permissions.push({ role, read: true, write: false });
+    permissions.push({ role, email: query, read: true, write: false });
     this.setState({ permissions });
   }
 
   onToggle(permission, flag) {
     this.setState(({ permissions }) => ({
-      permissions: permissions.map(perm => ({
+      permissions: permissions.map((perm) => ({
         ...perm,
         [flag]: perm.role.id === permission.role.id ? !perm[flag] : perm[flag],
       })),
     }));
   }
 
-  async onSave() {
+  async onSubmit() {
     const { intl, collection } = this.props;
     const { permissions, blocking } = this.state;
     if (blocking) return;
@@ -110,16 +111,15 @@ class CollectionAccessDialog extends Component {
     try {
       await this.props.updateCollectionPermissions(collection.id, permissions);
       this.props.toggleDialog();
-      this.setState({ blocking: false });
       showSuccessToast(intl.formatMessage(messages.save_success));
     } catch (e) {
-      this.setState({ blocking: false });
       showWarningToast(e.message);
     }
+    this.setState({ blocking: false });
   }
 
   setPermissions(permissions, blocking) {
-    this.setState(state => ({
+    this.setState((state) => ({
       permissions: permissions || state.permissions,
       blocking: blocking === undefined ? state.blocking : blocking,
     }));
@@ -135,7 +135,7 @@ class CollectionAccessDialog extends Component {
 
   filterPermissions(type) {
     const { permissions } = this.state;
-    return permissions.filter(perm => perm.role.type === type);
+    return permissions.filter((perm) => perm.role.type === type);
   }
 
   render() {
@@ -146,19 +146,22 @@ class CollectionAccessDialog extends Component {
       return null;
     }
 
-    const exclude = permissions.map(perm => perm.role.id);
     const systemRoles = this.filterPermissions('system');
     const groupRoles = this.filterPermissions('group');
     const userRoles = this.filterPermissions('user');
+    const exclude = userRoles.map((perm) => perm.role.id);
+
     return (
-      <Dialog
+      <FormDialog
+        processing={blocking}
         icon="key"
         className="CollectionAccessDialog"
         isOpen={this.props.isOpen}
         onClose={this.props.toggleDialog}
         title={intl.formatMessage(messages.title)}
+        enforceFocus={false}
       >
-        <div className="bp3-dialog-body">
+        <div className={Classes.DIALOG_BODY}>
           <div className="CollectionPermissions">
             <table className="settings-table">
               <thead>
@@ -179,7 +182,7 @@ class CollectionAccessDialog extends Component {
                 </tr>
               </thead>
               <tbody>
-                {systemRoles.map(permission => (
+                {systemRoles.map((permission) => (
                   <PermissionRow
                     key={permission.role.id}
                     permission={permission}
@@ -187,7 +190,7 @@ class CollectionAccessDialog extends Component {
                   />
                 ))}
                 {groupRoles.length > 0 && (
-                  <React.Fragment>
+                  <>
                     <tr key="groups">
                       <td className="header-topic" colSpan="3">
                         <FormattedMessage
@@ -196,14 +199,14 @@ class CollectionAccessDialog extends Component {
                         />
                       </td>
                     </tr>
-                    {groupRoles.map(permission => (
+                    {groupRoles.map((permission) => (
                       <PermissionRow
                         key={permission.role.id}
                         permission={permission}
                         onToggle={this.onToggle}
                       />
                     ))}
-                  </React.Fragment>
+                  </>
                 )}
                 <tr key="users">
                   <td className="header-topic" colSpan="3">
@@ -213,7 +216,7 @@ class CollectionAccessDialog extends Component {
                     />
                   </td>
                 </tr>
-                {userRoles.map(permission => (
+                {userRoles.map((permission) => (
                   <PermissionRow
                     key={permission.role.id}
                     permission={permission}
@@ -222,45 +225,50 @@ class CollectionAccessDialog extends Component {
                 ))}
                 <tr key="add">
                   <td colSpan="3">
-                    <Role.Select
-                      onSelect={this.onAddRole}
-                      exclude={exclude}
-                    />
+                    <Role.Select onSelect={this.onAddRole} exclude={exclude} />
+                    <Callout intent={Intent.WARNING}>
+                      <FormattedMessage
+                        id="collection.edit.permissions_warning"
+                        defaultMessage="Note: User must already have an Aleph account in order to receive access."
+                      />
+                    </Callout>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-        <div className="bp3-dialog-footer">
-          <div className="bp3-dialog-footer-actions">
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
               onClick={this.props.toggleDialog}
               disabled={blocking}
               text={intl.formatMessage(messages.cancel_button)}
             />
             <Button
+              type="button"
+              onClick={this.onSubmit}
               intent={Intent.PRIMARY}
-              onClick={this.onSave}
               disabled={blocking}
               text={intl.formatMessage(messages.save_button)}
             />
           </div>
         </div>
-      </Dialog>
+      </FormDialog>
     );
   }
 }
-
 
 const mapStateToProps = (state, ownProps) => {
   const collectionId = ownProps.collection.id;
   return { permissions: selectCollectionPermissions(state, collectionId) };
 };
-const mapDispatchToProps = { updateCollectionPermissions, fetchCollectionPermissions };
-
+const mapDispatchToProps = {
+  updateCollectionPermissions,
+  fetchCollectionPermissions,
+};
 
 export default compose(
   connect(mapStateToProps, mapDispatchToProps),
-  injectIntl,
+  injectIntl
 )(CollectionAccessDialog);

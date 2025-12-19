@@ -1,0 +1,95 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.Statistics {
+  display: inline-block;
+
+  &.#{$bp-ns}-callout.dark {
+    background-color: white;
+  }
+
+  &__headline {
+    color: white !important;
+    @include rtl(text-align, left, right);
+    margin-bottom: 15px;
+
+    .dark & {
+      color: $blue1 !important;
+    }
+  }
+
+  &__filter {
+    margin-bottom: 15px;
+  }
+
+  &__list {
+    list-style: none;
+    padding: unset;
+    margin: 0;
+  }
+
+  &__more-toggle.#{$bp-ns}-button {
+    padding: 0;
+    margin-bottom: 0 !important;
+  }
+
+  &__list-item {
+    margin: 7px 0;
+    display: flex;
+
+    a,
+    .#{$bp-ns}-button {
+      color: $aleph-content-background !important;
+      width: 100%;
+      @include rtl(text-align, left, right);
+      transition: background-color 0.1s ease-out;
+
+      &:hover {
+        text-decoration: none;
+        background-color: #ffffff38 !important;
+
+        .dark & {
+          color: $blue1 !important;
+        }
+      }
+
+      .dark & {
+        color: black !important;
+      }
+    }
+
+    .#{$bp-ns}-button {
+      box-shadow: none !important;
+      background: none !important;
+      border-radius: 0;
+      min-height: 25px;
+      @include rtl(justify-content, left, right);
+      margin: 10px 0;
+    }
+
+    .#{$bp-ns}-button-text {
+      font-weight: 600;
+    }
+
+    .inner-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      @include rtlSupportInvertedProp(margin, right, 5px, null);
+    }
+
+    .value {
+      flex: 0 0 auto;
+
+      .dark & {
+        color: $aleph-greyed-text;
+      }
+    }
+  }
+}

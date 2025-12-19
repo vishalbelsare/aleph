@@ -1,102 +1,222 @@
 import logging
 from datetime import datetime
+from collections import defaultdict
 
-from aleph.core import db, cache, celery
+from aleph.core import db, cache
 from aleph.authz import Authz
-from aleph.model import Collection, Entity, Match
-from aleph.model import Role, Permission, Events
+from aleph.queues import cancel_queue, ingest_entity, get_status
+from aleph.model import Collection, Entity, Document, Mapping
+from aleph.model import Permission, Events, EntitySet
 from aleph.index import collections as index
+from aleph.index import xref as xref_index
+from aleph.index import entities as entities_index
 from aleph.logic.notifications import publish, flush_notifications
+from aleph.logic.documents import ingest_flush, MODEL_ORIGIN
+from aleph.logic.aggregator import get_aggregator
+from aleph.util import random_id
 
 log = logging.getLogger(__name__)
 
 
-def create_collection(data, role=None, sync=False):
-    role = role or Role.load_cli_user()
-    created_at = datetime.utcnow()
-    collection = Collection.create(data, role=role, created_at=created_at)
-    if collection.created_at == created_at:
-        publish(Events.CREATE_COLLECTION,
-                actor_id=role.id,
-                params={'collection': collection})
+def create_collection(data, authz, sync=False):
+    now = datetime.utcnow()
+    collection = Collection.create(data, authz, created_at=now)
+    if collection.created_at == now:
+        publish(
+            Events.CREATE_COLLECTION,
+            params={"collection": collection},
+            channels=[collection, authz.role],
+            actor_id=authz.id,
+        )
     db.session.commit()
-    Authz.flush()
-    refresh_collection(collection.id)
-    return index.index_collection(collection, sync=sync)
+    return update_collection(collection, sync=sync)
 
 
 def update_collection(collection, sync=False):
-    """Create or update a collection."""
+    """Update a collection and re-index."""
     Authz.flush()
     refresh_collection(collection.id)
     return index.index_collection(collection, sync=sync)
 
 
-def refresh_collection(collection_id, sync=False):
+def refresh_collection(collection_id):
     """Operations to execute after updating a collection-related
-    domain object. This will refresh stats and re-index."""
-    cache.kv.delete(cache.object_key(Collection, collection_id))
+    domain object. This will refresh stats and flush cache."""
+    cache.kv.delete(
+        cache.object_key(Collection, collection_id),
+        cache.object_key(Collection, collection_id, "stats"),
+    )
 
 
-def index_collection(collection, entities=False, refresh=False):
-    log.info("Index [%s]: %s", collection.id, collection.label)
-    if entities and collection.deleted_at is None:
-        index_collection_entities.delay(collection_id=collection.id)
-    if refresh:
-        refresh_collection(collection.id)
-    index.index_collection(collection)
+def get_deep_collection(collection):
+    mappings = Mapping.by_collection(collection.id).count()
+    entitysets = EntitySet.type_counts(collection_id=collection.id)
+    return {
+        "statistics": index.get_collection_stats(collection.id),
+        "counts": {"mappings": mappings, "entitysets": entitysets},
+        "status": get_status(collection),
+        "shallow": False,
+    }
 
 
-def index_collections(entities=False, refresh=False):
-    q = Collection.all(deleted=True)
-    q = q.order_by(Collection.updated_at.desc())
-    for collection in q:
-        index_collection(collection, entities=entities, refresh=refresh)
+def compute_collections():
+    """Update collection caches, including the global stats cache."""
+    authz = Authz.from_role(None)
+    schemata = defaultdict(int)
+    countries = defaultdict(int)
+    categories = defaultdict(int)
+
+    for collection in Collection.all():
+        compute_collection(collection)
+
+        if authz.can(collection.id, authz.READ):
+            categories[collection.category] += 1
+            things = index.get_collection_things(collection.id)
+            for schema, count in things.items():
+                schemata[schema] += count
+            for country in collection.countries:
+                countries[country] += 1
+
+    log.info("Updating global statistics cache...")
+    data = {
+        "collections": sum(categories.values()),
+        "schemata": dict(schemata),
+        "countries": dict(countries),
+        "categories": dict(categories),
+        "things": sum(schemata.values()),
+    }
+    key = cache.key(cache.STATISTICS)
+    cache.set_complex(key, data, expires=cache.EXPIRE)
 
 
-def delete_collection(collection, sync=False):
-    flush_notifications(collection)
-    collection.delete()
+def compute_collection(collection, force=False, sync=False):
+    key = cache.object_key(Collection, collection.id, "stats")
+    if cache.get(key) is not None and not force:
+        return
+    refresh_collection(collection.id)
+    log.info("[%s] Computing statistics...", collection)
+    index.update_collection_stats(collection.id)
+    cache.set(key, datetime.utcnow().isoformat())
+    index.index_collection(collection, sync=sync)
+
+
+def aggregate_model(collection, aggregator):
+    """Sync up the aggregator from the Aleph domain model."""
+    log.debug("[%s] Aggregating model...", collection)
+    aggregator.delete(origin=MODEL_ORIGIN)
+    writer = aggregator.bulk()
+    for document in Document.by_collection(collection.id):
+        proxy = document.to_proxy(ns=collection.ns)
+        writer.put(proxy, fragment="db", origin=MODEL_ORIGIN)
+    for entity in Entity.by_collection(collection.id):
+        proxy = entity.to_proxy()
+        aggregator.delete(entity_id=proxy.id)
+        writer.put(proxy, fragment="db", origin=MODEL_ORIGIN)
+    writer.flush()
+
+
+def index_aggregator(
+    collection, aggregator, entity_ids=None, skip_errors=False, sync=False
+):
+    def _generate():
+        idx = 0
+        entities = aggregator.iterate(entity_id=entity_ids, skip_errors=skip_errors)
+        for idx, proxy in enumerate(entities, 1):
+            if idx > 0 and idx % 1000 == 0:
+                log.debug("[%s] Index: %s...", collection, idx)
+            yield proxy
+        log.debug("[%s] Indexed %s entities", collection, idx)
+
+    entities_index.index_bulk(_generate(), collection=collection, sync=sync)
+
+
+def index_aggregator_bulk(entity_ids, skip_errors=False, sync=False):
+    def _generate():
+        idx = 0
+        for collection_id in entity_ids.keys():
+            collection = Collection.by_id(collection_id)
+            if collection:
+                aggregator = get_aggregator(collection)
+                entities = aggregator.iterate(
+                    entity_id=entity_ids[collection_id], skip_errors=skip_errors
+                )
+                for idx, proxy in enumerate(entities, 1):
+                    if idx > 0 and idx % 1000 == 0:
+                        log.debug("[%s] Index: %s...", collection_id, idx)
+                    yield (proxy, collection)
+                log.debug("[%s] Indexed %s entities", collection_id, idx)
+            else:
+                log.debug(
+                    f"Bulk indexing for inexistent collection id: {collection_id}"
+                )
+
+    entities_index.index_bulk(_generate(), sync=sync)
+
+
+def reingest_collection(
+    collection, job_id=None, index=False, flush=True, include_ingest=False
+):
+    """Trigger a re-ingest for all documents in the collection."""
+    job_id = job_id or random_id()
+    if flush:
+        ingest_flush(collection, include_ingest=include_ingest)
+    for document in Document.by_collection(collection.id):
+        proxy = document.to_proxy(ns=collection.ns)
+        ingest_entity(collection, proxy, job_id=job_id, index=index)
+
+
+def reindex_collection(collection, skip_errors=True, sync=False, flush=False):
+    """Re-index all entities from the model, mappings and aggregator cache."""
+    from aleph.logic.mapping import map_to_aggregator
+    from aleph.logic.profiles import profile_fragments
+
+    aggregator = get_aggregator(collection)
+    for mapping in collection.mappings:
+        if mapping.disabled:
+            log.debug("[%s] Skip mapping: %r", collection, mapping)
+            continue
+        try:
+            map_to_aggregator(collection, mapping, aggregator)
+        except Exception:
+            # More or less ignore broken models.
+            log.exception("Failed mapping: %r", mapping)
+    aggregate_model(collection, aggregator)
+    profile_fragments(collection, aggregator)
+    if flush:
+        log.debug("[%s] Flushing...", collection)
+        index.delete_entities(collection.id, sync=True)
+    index_aggregator(collection, aggregator, skip_errors=skip_errors, sync=sync)
+    compute_collection(collection, force=True)
+
+
+def delete_collection(collection, keep_metadata=False, sync=False):
+    deleted_at = collection.deleted_at or datetime.utcnow()
+    cancel_queue(collection)
+    aggregator = get_aggregator(collection)
+    aggregator.delete()
+    flush_notifications(collection, sync=sync)
+    index.delete_entities(collection.id, sync=sync)
+    xref_index.delete_xref(collection, sync=sync)
+    Mapping.delete_by_collection(collection.id)
+    EntitySet.delete_by_collection(collection.id, deleted_at)
+    Entity.delete_by_collection(collection.id)
+    Document.delete_by_collection(collection.id)
+    if not keep_metadata:
+        Permission.delete_by_collection(collection.id)
+        collection.delete(deleted_at=deleted_at)
     db.session.commit()
-    index.delete_collection(collection.id, sync=sync)
-    delete_collection_content.apply_async([collection.id], priority=7)
+    if not keep_metadata:
+        index.delete_collection(collection.id, sync=True)
+        aggregator.drop()
     refresh_collection(collection.id)
     Authz.flush()
 
 
-@celery.task()
-def delete_collection_content(collection_id):
-    # Deleting a collection affects many associated objects and requires
-    # checks, so this is done manually and in detail here.
-    q = db.session.query(Collection)
-    q = q.filter(Collection.id == collection_id)
-    collection = q.first()
-    if collection is None:
-        log.error("No collection with ID: %r", collection_id)
-        return
-
-    log.info("Deleting collection [%r]: %r", collection.id, collection.label)
-    deleted_at = collection.deleted_at or datetime.utcnow()
-    Entity.delete_by_collection(collection_id, deleted_at=deleted_at)
-    Match.delete_by_collection(collection_id, deleted_at=deleted_at)
-    Permission.delete_by_collection(collection_id, deleted_at=deleted_at)
-    index.delete_collection(collection_id)
-    index.delete_entities(collection_id)
-    collection.delete(deleted_at=deleted_at)
-    db.session.commit()
-
-
-@celery.task(priority=1)
-def index_collection_entities(collection_id):
-    from aleph.index import entities
-    collection = Collection.by_id(collection_id)
-    if collection is not None:
-        entities.index_collection_entities(collection)
-    refresh_collection(collection_id)
-
-
-def delete_bulk_entities(collection_id, deleted_at=None):
-    deleted_at = deleted_at or datetime.utcnow()
-    log.info("Deleting entities...")
-    index.delete_entities(collection_id, bulk_only=True)
-    Match.delete_by_collection(collection_id, deleted_at=deleted_at)
+def upgrade_collections():
+    for collection in Collection.all(deleted=True):
+        if collection.deleted_at is not None:
+            delete_collection(collection, keep_metadata=True, sync=True)
+        else:
+            compute_collection(collection, force=True)
+    # update global cache:
+    compute_collections()

@@ -2,95 +2,102 @@ import json
 from unittest import skip  # noqa
 
 from aleph.core import db
-from aleph.tests.util import TestCase
-from aleph.logic.entities.xref import xref_collection
-from aleph.model import Match
+from aleph.authz import Authz
+from aleph.tests.util import TestCase, JSON
+from aleph.logic.xref import xref_collection
+from aleph.index.xref import iter_matches
 
 
 class XrefTestCase(TestCase):
-
     def setUp(self):
         super(XrefTestCase, self).setUp()
         self.user = self.create_user()
-        self.coll_a = self.create_collection(creator=self.user, casefile=False)
-        self.coll_b = self.create_collection(creator=self.user, casefile=False)
-        self.coll_c = self.create_collection(creator=self.user, casefile=False)
+        self.coll_a = self.create_collection(creator=self.user)
+        self.coll_b = self.create_collection(creator=self.user)
+        self.coll_c = self.create_collection(creator=self.user)
         db.session.commit()
+        self.authz = Authz.from_role(self.user)
 
-    def setup_entities(self):
         _, headers = self.login(foreign_id=self.user.foreign_id)
-        url = '/api/2/entities'
+        url = "/api/2/entities"
 
-        entity = {
-            'schema': 'Person',
-            'collection_id': self.coll_a.id,
-            'properties': {
-                'name': 'Carlos Danger',
-                'nationality': 'US'
-            }
+        entity1 = {
+            "schema": "Person",
+            "collection_id": str(self.coll_a.id),
+            "properties": {"name": "Carlos Danger", "nationality": "US"},
         }
-        self.client.post(url, data=json.dumps(entity),
-                         headers=headers,
-                         content_type='application/json')
-        entity = {
-            'schema': 'Person',
-            'collection_id': self.coll_b.id,
-            'properties': {
-                'name': 'Carlos Danger',
-                'nationality': 'US'
-            }
+        self.entity1 = self.client.post(
+            url,
+            data=json.dumps(entity1),
+            headers=headers,
+            content_type=JSON,
+        )
+        entity2 = {
+            "schema": "Person",
+            "collection_id": str(self.coll_b.id),
+            "properties": {"name": "Carlos Danger", "nationality": "US"},
         }
-        self.client.post(url, data=json.dumps(entity),
-                         headers=headers,
-                         content_type='application/json')
-        entity = {
-            'schema': 'LegalEntity',
-            'collection_id': self.coll_b.id,
-            'properties': {
-                'name': 'Carlos Danger',
-                'country': 'GB'
-            }
+        self.entity2 = self.client.post(
+            url,
+            data=json.dumps(entity2),
+            headers=headers,
+            content_type=JSON,
+        )
+        entity3 = {
+            "schema": "LegalEntity",
+            "collection_id": str(self.coll_b.id),
+            "properties": {"name": "Carlos Danger", "country": "GB"},
         }
-        self.client.post(url, data=json.dumps(entity),
-                         headers=headers,
-                         content_type='application/json')
-        entity = {
-            'schema': 'Person',
-            'collection_id': self.coll_b.id,
-            'properties': {
-                'name': 'Pure Risk',
-                'nationality': 'US'
-            }
+        self.entity3 = self.client.post(
+            url,
+            data=json.dumps(entity3),
+            headers=headers,
+            content_type=JSON,
+        )
+        entity4 = {
+            "schema": "Person",
+            "collection_id": str(self.coll_b.id),
+            "properties": {"name": "Pure Risk", "nationality": "US"},
         }
-        self.client.post(url, data=json.dumps(entity),
-                         headers=headers,
-                         content_type='application/json')
+        self.entity4 = self.client.post(
+            url,
+            data=json.dumps(entity4),
+            headers=headers,
+            content_type=JSON,
+        )
 
-        entity = {
-            'schema': 'LegalEntity',
-            'collection_id': self.coll_c.id,
-            'properties': {
-                'name': 'Carlos Danger',
-                'country': 'GB'
-            }
+        entity5 = {
+            "schema": "LegalEntity",
+            "collection_id": str(self.coll_c.id),
+            "properties": {"name": "Carlos Danger", "country": "GB"},
         }
-        self.client.post(url, data=json.dumps(entity),
-                         headers=headers,
-                         content_type='application/json')
+        self.entity5 = self.client.post(
+            url,
+            data=json.dumps(entity5),
+            headers=headers,
+            content_type=JSON,
+        )
 
     def test_xref(self):
-        self.setup_entities()
-        q = db.session.query(Match)
-        assert 0 == q.count(), q.count()
-        xref_collection(self.coll_a.id)
-        q = db.session.query(Match)
-        assert 3 == q.count(), q.count()
-
-    def test_xref_specific_collections(self):
-        self.setup_entities()
-        q = db.session.query(Match)
-        assert 0 == q.count(), q.count()
-        xref_collection(self.coll_a.id,
-                        against_collection_ids=[self.coll_c.id])
-        q = db.session.query(Match)
-        assert 1 == q.count(), q.count()
+        matches = list(iter_matches(self.coll_a, self.authz))
+        assert 0 == len(matches), len(matches)
+        xref_collection(self.coll_a)
+        matches = list(iter_matches(self.coll_a, self.authz))
+        match_collection_ids = set(
+            [match.get("match_collection_id") for match in matches]
+        )
+        assert match_collection_ids == {
+            self.coll_b.id,
+            self.coll_c.id,
+        }, match_collection_ids
+        match_ids = set([match.get("match_id") for match in matches])
+        assert match_ids == {
+            self.entity2.get_json().get("id"),
+            self.entity3.get_json().get("id"),
+            self.entity5.get_json().get("id"),
+        }, match_ids
+        assert 3 == len(matches), len(matches)
+        for match in matches:
+            if match.get("id") == self.entity5.get_json().get("id"):
+                assert match.get("match_collection_id") == self.coll_c.id, match
+                assert match.get("collection_id") == self.coll_a.id, match

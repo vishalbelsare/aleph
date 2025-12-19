@@ -1,55 +1,16 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
 
 .EntityTable {
-  .schema {
-    max-width: 8em;
-    @media screen and (max-width: $aleph-screen-md-max-width) {
-      display: none;
-    }
+  .align-middle {
+    vertical-align: middle;
   }
 
-  .updating {
-    opacity: 0.4;
+  .Count {
+    @include rtlSupportInvertedProp(margin, left, 5px, null);
   }
 
-  .bp3-control {
-    margin-bottom: 0 !important;
-  }
-
-  .bp3-control-indicator {
-    margin-left: 0px !important;
-  }
-}
-
-.EntityTableRow {
-  &.active {
-    em {
-      background: inherit;
-    }
-  }
-
-  &.prefix {
-    td {
-      border-bottom: 0px !important;
-      padding-bottom: 0;
-    }
-  }
-
-  em {
-    background: $aleph-text-highlight-color;
-    font-style: normal;
-  }
-}
-
-//medium and small screen
-@media screen and (max-width: $aleph-screen-md-max-width) {
-  .EntityTable {
-    .header-country, .header-dates, .header-size {
-      display: none;
-    }
-
-    .country, .date, .file-size {
-      display: none;
-    }
+  .data-grid-container {
+    min-height: 300px;
   }
 }

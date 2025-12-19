@@ -1,13 +1,36 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
 
 .AuthButtons {
   display: inline-flex;
-  margin-left: $aleph-grid-size;
   @media screen and (max-width: $aleph-screen-md-max-width) {
-    margin-left: 0;
+    @include rtlSupportInvertedProp(margin, left, 0, none);
   }
 
   .menu-item-width {
     min-width: 0 !important;
+  }
+
+  &__popover {
+    &__menu {
+      background-color: #3a454d !important;
+    }
+    .#{$bp-ns}-popover2-arrow-fill {
+      fill: #3a454d !important;
+    }
+
+    .#{$bp-ns}-menu-item.mobile-show {
+      @media screen and (min-width: $aleph-navbar-mobile-max-width) {
+        display: none;
+      }
+    }
+  }
+
+  &__label {
+    display: -webkit-box;
+    max-width: 120px;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }

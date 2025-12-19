@@ -1,0 +1,11 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.Facets {
+  display: flex;
+  flex-flow: column nowrap;
+  @include rtlSupportInvertedProp(padding, left, 0, null);
+  margin-top: 0;
+  margin-bottom: 0;
+  list-style: none;
+}

@@ -1,50 +1,58 @@
-import React from 'react';
-import { connect } from 'react-redux';
+import React, { PureComponent } from 'react';
 import { Pre } from '@blueprintjs/core';
 
-import SectionLoading from 'src/components/common/SectionLoading';
-import { selectDocumentContent } from 'src/selectors';
-import { fetchDocumentContent } from 'src/actions';
+import { Skeleton } from 'components/common';
+import insertHighlights from 'util/insertHighlights';
+import convertHighlightsToReactElements from 'util/convertHighlightsToReactElements';
 
 import './TextViewer.scss';
 
-class TextViewer extends React.Component {
-  componentWillMount() {
-    this.fetchIfNeeded();
-  }
-
-  componentDidUpdate() {
-    this.fetchIfNeeded();
-  }
-
-  fetchIfNeeded() {
-    const { content, document } = this.props;
-    if (content.shouldLoad) {
-      this.props.fetchDocumentContent(document);
-    }
+class TextViewer extends PureComponent {
+  constructor() {
+    super();
+    this.highlightedText.bind(this);
+    this.contents.bind(this);
   }
 
   render() {
-    const { content, noStyle } = this.props;
-    if (content.shouldLoad || content.isLoading) {
-      return <SectionLoading />;
+    const { noStyle } = this.props;
+
+    if (noStyle) {
+      return this.contents();
     }
-    const text = <Pre>{content.text}</Pre>;
-    return noStyle ? text : (
+
+    return (
       <div className="outer">
-        <div className="inner TextViewer">
-          {text}
-        </div>
+        <div className="inner">{this.contents()}</div>
       </div>
     );
   }
+
+  contents() {
+    const { document, dir } = this.props;
+
+    if (document.isPending) {
+      return <Skeleton.Text type="pre" length={4000} />;
+    }
+
+    return (
+      <Pre className="TextViewer" dir={dir}>
+        {this.highlightedText()}
+      </Pre>
+    );
+  }
+
+  highlightedText() {
+    const { document } = this.props;
+    let text = document.getFirst('bodyText');
+
+    if (!document.highlight) {
+      return text;
+    }
+
+    const highlightedText = insertHighlights(text, document.highlight);
+    return convertHighlightsToReactElements(highlightedText);
+  }
 }
 
-const mapStateToProps = (state, ownProps) => {
-  const { document } = ownProps;
-  return {
-    content: selectDocumentContent(state, document.id),
-  };
-};
-
-export default connect(mapStateToProps, { fetchDocumentContent })(TextViewer);
+export default TextViewer;

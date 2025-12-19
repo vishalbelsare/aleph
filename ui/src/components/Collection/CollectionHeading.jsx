@@ -1,30 +1,44 @@
 import React, { PureComponent } from 'react';
-import { FormattedMessage } from 'react-intl';
+import c from 'classnames';
+import { Classes } from '@blueprintjs/core';
 
-import { Collection } from 'src/components/common';
+import { Category, Collection, Skeleton } from 'components/common';
 
+import './CollectionHeading.scss';
 
 class CollectionHeading extends PureComponent {
+  renderSkeleton = () => (
+    <div className="CollectionHeading">
+      <Skeleton.Text type="span" length={20} className={Classes.TEXT_MUTED} />
+      <Skeleton.Text
+        type="h1"
+        length={20}
+        className="CollectionHeading__title"
+      />
+    </div>
+  );
+
   render() {
-    const { collection } = this.props;
+    const { collection, link = false } = this.props;
+
+    if (collection?.label === undefined) {
+      return this.renderSkeleton();
+    }
+
+    const CollectionComponent = link ? Collection.Link : Collection.Label;
 
     return (
-      <React.Fragment>
-        <div className="pane-heading">
-          <span>
-            <Collection.Label collection={collection} label={false} />
-            { collection.casefile && (
-              <FormattedMessage id="collection.info.case" defaultMessage="Casefile" />
-            )}
-            { !collection.casefile && (
-              <FormattedMessage id="collection.info.source" defaultMessage="Source" />
-            )}
-          </span>
-          <h1 itemProp="name">
-            {collection.label}
-          </h1>
+      <div className={c('CollectionHeading', { padded: !collection.casefile })}>
+        <div className={c(Classes.TEXT_MUTED, 'CollectionHeading__subheading')}>
+          <Category.Link
+            category={collection.category}
+            icon={collection.casefile ? 'briefcase' : 'database'}
+          />
         </div>
-      </React.Fragment>
+        <h2 itemProp="name" className="CollectionHeading__title">
+          <CollectionComponent collection={collection} icon={false} />
+        </h2>
+      </div>
     );
   }
 }

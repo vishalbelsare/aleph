@@ -1,0 +1,20 @@
+@import 'app/tables.scss';
+@import 'app/mixins.scss';
+@import 'app/variables.scss';
+
+.StatusTable {
+  @extend .#{$bp-ns}-html-table;
+
+  tr td,
+  tr th {
+    vertical-align: middle;
+  }
+
+  td.text {
+    @include rtlSupportInvertedProp(padding, left, 0, null);
+  }
+
+  &__timestamps {
+    color: $aleph-greyed-text;
+  }
+}

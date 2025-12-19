@@ -1,4 +1,3 @@
-#
 # Bulk object resolver.
 # The purpose of this module is to quickly load objects of different
 # types from the backend. It's typically used by the API serialiser
@@ -7,13 +6,13 @@
 import logging
 from normality import stringify
 from collections import defaultdict
-# from followthemoney import model
-# from followthemoney.schema import Schema
 
 from aleph.core import cache
-from aleph.model import Role, Collection, Alert, Entity
+from aleph.model import Role, Collection, Alert, Entity, EntitySet, Export
 from aleph.logic.roles import get_role
 from aleph.logic.alerts import get_alert
+from aleph.logic.entitysets import get_entityset
+from aleph.logic.export import get_export
 from aleph.index.collections import get_collection
 from aleph.index.entities import entities_by_ids
 
@@ -21,14 +20,16 @@ log = logging.getLogger(__name__)
 LOADERS = {
     Role: get_role,
     Collection: get_collection,
-    Alert: get_alert
+    Alert: get_alert,
+    EntitySet: get_entityset,
+    Export: get_export,
 }
 
 
 def _instrument_stub(stub):
-    if not hasattr(stub, '_rx_queue'):
+    if not hasattr(stub, "_rx_queue"):
         stub._rx_queue = set()
-    if not hasattr(stub, '_rx_cache'):
+    if not hasattr(stub, "_rx_cache"):
         stub._rx_cache = {}
 
 
@@ -70,7 +71,7 @@ def resolve(stub):
 
     for schema, ids in queries.items():
         for entity in entities_by_ids(ids, schemata=schema, cached=True):
-            stub._rx_cache[(Entity, entity.get('id'))] = entity
+            stub._rx_cache[(Entity, entity.get("id"))] = entity
 
 
 def get(stub, clazz, key):

@@ -1,0 +1,91 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+$search-bar-width: 200px;
+$status-width: 120px;
+
+.EntityActionBar {
+  margin-bottom: $aleph-content-padding * 0.5;
+  width: 100%;
+
+  .preview & {
+    display: none;
+  }
+
+  .#{$bp-ns}-control-group {
+    justify-content: space-between;
+    padding-bottom: $aleph-content-padding * 0.5;
+
+    .#{$bp-ns}-input-group {
+      .#{$bp-ns}-input:not(:first-child) {
+        @include rtlSupportInvertedProp(
+          padding,
+          left,
+          $aleph-grid-size * 3,
+          null
+        );
+      }
+    }
+    .#{$bp-ns}-input-group,
+    .#{$bp-ns}-button-group {
+      border-radius: 3px;
+    }
+  }
+
+  .#{$bp-ns}-divider {
+    border-right: 1px solid $aleph-border-color;
+    margin: 0 7px;
+  }
+
+  .#{$bp-ns}-overflow-list {
+    width: calc(100% - #{$search-bar-width});
+  }
+
+  &.show-status {
+    .#{$bp-ns}-overflow-list {
+      width: calc(100% - #{$search-bar-width} - #{$status-width});
+    }
+  }
+
+  &__delete,
+  .#{$bp-ns}-popover2-target .#{$bp-ns}-button {
+    border-top-right-radius: $aleph-border-radius !important;
+    border-bottom-right-radius: $aleph-border-radius !important;
+  }
+
+  &__overflow-list {
+    .#{$bp-ns}-popover2-content {
+      padding: $aleph-grid-size * 0.5 0;
+    }
+    .Count {
+      @include rtlSupportInvertedProp(
+        margin,
+        left,
+        $aleph-grid-size * 0.5,
+        null
+      );
+    }
+  }
+
+  &__right {
+    display: flex;
+    margin: 0 !important;
+  }
+
+  .prevent-flex-grow.#{$bp-ns}-popover2-target {
+    flex: 0 0 auto;
+  }
+
+  .align-middle {
+    vertical-align: middle;
+  }
+
+  .Count {
+    @include rtlSupportInvertedProp(margin, left, $aleph-grid-size * 0.5, null);
+  }
+
+  .#{$bp-ns}-button {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}

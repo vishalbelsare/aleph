@@ -1,186 +1,286 @@
 import logging
-from collections import defaultdict
-from flask import Blueprint, request
+from babel import Locale
+from functools import lru_cache
+from flask import Blueprint, request, current_app
 from flask_babel import gettext, get_locale
 from elasticsearch import TransportError
 from followthemoney import model
+from followthemoney import __version__ as ftm_version
 from followthemoney.exc import InvalidData
-from followthemoney.types import registry
 from jwt import ExpiredSignatureError, DecodeError
+from banal import as_bool
 
 from aleph import __version__
-from aleph.core import cache, settings, url_for
+from aleph.core import url_for, cache, archive
+from aleph.settings import SETTINGS
+from aleph.authz import Authz
 from aleph.model import Collection, Role
-from aleph.logic import resolver
-from aleph.views.serializers import RoleSerializer
+from aleph.logic.pages import load_pages
+from aleph.logic.util import collection_url
+from aleph.validation import get_openapi_spec
 from aleph.views.context import enable_cache, NotModified
-from aleph.views.util import jsonify
+from aleph.views.util import jsonify, render_xml
 
-blueprint = Blueprint('base_api', __name__)
+blueprint = Blueprint("base_api", __name__)
 log = logging.getLogger(__name__)
 
 
-@blueprint.route('/api/2/metadata')
-def metadata():
-    locale = get_locale()
-    enable_cache(vary_user=False, vary=str(locale))
-    key = cache.key('metadata', locale)
-    data = cache.get_complex(key)
-    if data is not None:
-        return jsonify(data)
-
-    auth = {}
-    if settings.PASSWORD_LOGIN:
-        auth['password_login_uri'] = url_for('sessions_api.password_login')
-        auth['registration_uri'] = url_for('roles_api.create_code')
-    if settings.OAUTH:
-        auth['oauth_uri'] = url_for('sessions_api.oauth_init')
-
-    data = {
-        'status': 'ok',
-        'maintenance': request.authz.in_maintenance,
-        'app': {
-            'title': settings.APP_TITLE,
-            'description': settings.APP_DESCRIPTION,
-            'version': __version__,
-            'banner': settings.APP_BANNER,
-            'ui_uri': settings.APP_UI_URL,
-            'samples': settings.SAMPLE_SEARCHES,
-            'logo': settings.APP_LOGO,
-            'favicon': settings.APP_FAVICON,
-            'locale': str(locale),
-            'locales': settings.UI_LANGUAGES
+@lru_cache(maxsize=None)
+def _metadata_locale(locale):
+    # This is cached in part because latency on this endpoint is
+    # particularly relevant to the first render being shown to a
+    # user.
+    auth = {
+        "oauth": SETTINGS.OAUTH,
+        "require_logged_in": SETTINGS.REQUIRE_LOGGED_IN,
+        "role_blocked": {
+            "message": SETTINGS.ROLE_BLOCKED_MESSAGE,
+            "link": SETTINGS.ROLE_BLOCKED_LINK,
+            "link_label": SETTINGS.ROLE_BLOCKED_LINK_LABEL,
         },
-        'categories': Collection.CATEGORIES,
-        'countries': registry.country.names,
-        'languages': registry.language.names,
-        'model': model,
-        'auth': auth
     }
-    cache.set_complex(key, data, expire=120)
+
+    if SETTINGS.PASSWORD_LOGIN:
+        auth["password_login_uri"] = url_for("sessions_api.password_login")
+
+    if SETTINGS.PASSWORD_LOGIN and not SETTINGS.MAINTENANCE:
+        auth["registration_uri"] = url_for("roles_api.create_code")
+
+    if SETTINGS.OAUTH:
+        auth["oauth_uri"] = url_for("sessions_api.oauth_init")
+
+    locales = SETTINGS.UI_LANGUAGES
+    locales = {loc: Locale(loc).get_language_name(loc) for loc in locales}
+
+    # This is dumb but we agreed it with ARIJ
+    # https://github.com/alephdata/aleph/issues/1432
+    app_logo = SETTINGS.APP_LOGO
+    if locale.language.startswith("ar"):
+        app_logo = SETTINGS.APP_LOGO_AR or app_logo
+
+    return {
+        "status": "ok",
+        "maintenance": SETTINGS.MAINTENANCE,
+        "app": {
+            "title": SETTINGS.APP_TITLE,
+            "version": __version__,
+            "ftm_version": ftm_version,
+            "banner": SETTINGS.APP_BANNER,
+            "ui_uri": SETTINGS.APP_UI_URL,
+            "messages_url": SETTINGS.APP_MESSAGES_URL,
+            "publish": archive.can_publish,
+            "logo": app_logo,
+            "favicon": SETTINGS.APP_FAVICON,
+            "locale": str(locale),
+            "locales": locales,
+        },
+        "categories": Collection.CATEGORIES,
+        "frequencies": Collection.FREQUENCIES,
+        "pages": load_pages(locale),
+        "model": model.to_dict(),
+        "token": None,
+        "auth": auth,
+        "feature_flags": {
+            "bookmarks": as_bool(SETTINGS.ENABLE_EXPERIMENTAL_BOOKMARKS_FEATURE),
+        },
+        "feedback_urls": {
+            "documents": SETTINGS.FEEDBACK_URL_DOCUMENTS,
+            "timelines": SETTINGS.FEEDBACK_URL_TIMELINES,
+        },
+    }
+
+
+@blueprint.route("/api/2/metadata")
+def metadata():
+    """Get operational metadata for the frontend.
+    ---
+    get:
+      summary: Retrieve system metadata from the application.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+      tags:
+      - System
+    """
+    request.rate_limit = None
+    locale = get_locale()
+    data = _metadata_locale(locale)
+    if SETTINGS.SINGLE_USER:
+        role = Role.load_cli_user()
+        authz = Authz.from_role(role)
+        data["token"] = authz.to_token()
     return jsonify(data)
 
 
-@blueprint.route('/api/2/statistics')
+@blueprint.route("/api/openapi.json")
+def openapi():
+    """Generate an OpenAPI 3.0 documentation JSON file for the API."""
+    enable_cache(vary_user=False)
+    spec = get_openapi_spec(current_app)
+    for name, view in current_app.view_functions.items():
+        if name in (
+            "static",
+            "base_api.openapi",
+            "base_api.api_v1_message",
+            "sessions_api.oauth_callback",
+        ):
+            continue
+        log.info("%s - %s", name, view.__qualname__)
+        spec.path(view=view)
+    return jsonify(spec.to_dict())
+
+
+@blueprint.route("/api/2/statistics")
 def statistics():
-    """Get a summary of the data acessible to the current user."""
-    enable_cache()
-    collections = request.authz.collections(request.authz.READ)
-    for collection_id in collections:
-        resolver.queue(request, Collection, collection_id)
-    for role_id in request.authz.roles:
-        resolver.queue(request, Role, role_id)
-    resolver.resolve(request)
+    """Get a summary of the data acessible to an anonymous user.
 
-    # Summarise stats. This is meant for display, so the counting is a bit
-    # inconsistent between counting all collections, and source collections
-    # only.
-    schemata = defaultdict(int)
-    countries = defaultdict(int)
-    categories = defaultdict(int)
-    for collection_id in collections:
-        data = resolver.get(request, Collection, collection_id)
-        if data is None or data.get('casefile'):
-            continue
-        categories[data.get('category')] += 1
-        for schema, count in data.get('schemata', {}).items():
-            schemata[schema] += count
-        for country in data.get('countries', []):
-            countries[country] += 1
-
-    # Add a users roles to the home page:
-    groups = []
-    for role_id in request.authz.roles:
-        data = resolver.get(request, Role, role_id)
-        if data is None or data.get('type') != Role.GROUP:
-            continue
-        groups.append(RoleSerializer().serialize(data))
-
-    return jsonify({
-        'collections': len(collections),
-        'schemata': dict(schemata),
-        'countries': dict(countries),
-        'categories': dict(categories),
-        'groups': groups,
-        'things': sum(schemata.values()),
-    })
+    Changed [3.9]: Previously, this would return user-specific stats.
+    ---
+    get:
+      summary: System-wide user statistics.
+      description: >
+        Get a summary of the data acessible to an anonymous user.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+      tags:
+      - System
+    """
+    enable_cache(vary_user=False)
+    key = cache.key(cache.STATISTICS)
+    data = {"countries": [], "schemata": [], "categories": []}
+    data = cache.get_complex(key) or data
+    return jsonify(data)
 
 
-@blueprint.route('/healthz')
+@blueprint.route("/api/2/sitemap.xml")
+def sitemap():
+    """
+    ---
+    get:
+      summary: Get a sitemap
+      description: >-
+        Returns a site map for search engine robots. This lists each
+        published collection on the current instance.
+      responses:
+        '200':
+          description: OK
+          content:
+            text/xml:
+              schema:
+                type: object
+      tags:
+      - System
+    """
+    enable_cache(vary_user=False)
+    request.rate_limit = None
+    collections = []
+    for collection in Collection.all_authz(Authz.from_role(None)):
+        updated_at = collection.updated_at.date().isoformat()
+        updated_at = max(SETTINGS.SITEMAP_FLOOR, updated_at)
+        url = collection_url(collection.id)
+        collections.append({"url": url, "updated_at": updated_at})
+    return render_xml("sitemap.xml", collections=collections)
+
+
+@blueprint.route("/healthz")
 def healthz():
-    return jsonify({'status': 'ok'})
-
-
-@blueprint.route('/api/1/<path:path>')
-def api_v1_message(path):
-    return jsonify({
-        'status': 'error',
-        'message': gettext('/api/1/ is deprecated, please use /api/2/.')
-    }, status=410)
+    """
+    ---
+    get:
+      summary: Health check endpoint.
+      description: >
+        This can be used e.g. for Kubernetes health checks, but it doesn't
+        do any internal checks.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: 'ok'
+      tags:
+      - System
+    """
+    request.rate_limit = None
+    return jsonify({"status": "ok"})
 
 
 @blueprint.app_errorhandler(NotModified)
 def handle_not_modified(err):
-    return ('', 304)
+    return ("", 304)
 
 
 @blueprint.app_errorhandler(400)
 def handle_bad_request(err):
-    return jsonify({
-        'status': 'error',
-        'message': err.description
-    }, status=400)
+    if err.response is not None and err.response.is_json:
+        return err.response
+    return jsonify({"status": "error", "message": err.description}, status=400)
 
 
 @blueprint.app_errorhandler(403)
 def handle_authz_error(err):
-    return jsonify({
-        'status': 'error',
-        'message': gettext('You are not authorized to do this.'),
-        'roles': request.authz.roles
-    }, status=403)
+    return jsonify(
+        {
+            "status": "error",
+            "message": gettext("You are not authorized to do this."),
+            "roles": request.authz.roles,
+        },
+        status=403,
+    )
 
 
 @blueprint.app_errorhandler(404)
 def handle_not_found_error(err):
-    return jsonify({
-        'status': 'error',
-        'message': gettext('This path does not exist.')
-    }, status=404)
+    msg = gettext("This path does not exist.")
+    return jsonify({"status": "error", "message": msg}, status=404)
 
 
 @blueprint.app_errorhandler(500)
 def handle_server_error(err):
     log.exception("%s: %s", type(err).__name__, err)
-    return jsonify({
-        'status': 'error',
-        'message': gettext('Internal server error.')
-    }, status=500)
+    msg = gettext("Internal server error.")
+    return jsonify({"status": "error", "message": msg}, status=500)
 
 
 @blueprint.app_errorhandler(InvalidData)
 def handle_invalid_data(err):
-    return jsonify({
-        'status': 'error',
-        'message': str(err),
-        'errors': err.errors
-    }, status=400)
+    data = {"status": "error", "message": str(err), "errors": err.errors}
+    return jsonify(data, status=400)
 
 
 @blueprint.app_errorhandler(DecodeError)
 @blueprint.app_errorhandler(ExpiredSignatureError)
 def handle_jwt_expired(err):
-    return jsonify({
-        'status': 'error',
-        'errors': gettext('Access token is invalid.')
-    }, status=401)
+    log.info("JWT Error: %s", err)
+    data = {"status": "error", "errors": gettext("Access token is invalid.")}
+    return jsonify(data, status=401)
 
 
 @blueprint.app_errorhandler(TransportError)
 def handle_es_error(err):
-    log.error("ES [%s]: %r", err.error, err.info)
-    return jsonify({
-        'status': 'error',
-        'message': gettext('There was an error during search'),
-        'context': err.error
-    }, status=500)
+    message = err.error
+    if hasattr(err, "info") and isinstance(err.info, dict):
+        error = err.info.get("error", {})
+        for root_cause in error.get("root_cause", []):
+            message = root_cause.get("reason", message)
+    try:
+        # Sometimes elasticsearch-py generates non-numeric status codes like
+        # "TIMEOUT", "N/A". Werkzeug converts them into status 0 which confuses
+        # web browsers. Replace the weird status codes with 500 instead.
+        status = int(err.status_code)
+    except ValueError:
+        status = 500
+    return jsonify({"status": "error", "message": message}, status=status)

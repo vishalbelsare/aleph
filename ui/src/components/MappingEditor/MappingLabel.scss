@@ -1,0 +1,24 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.MappingLabel {
+  font-weight: bold;
+  &__button,
+  &__input {
+    margin-top: -5px !important;
+    margin-left: -10px !important;
+  }
+
+  .#{$bp-ns}-button,
+  input,
+  .#{$bp-ns}-input-action,
+  .#{$bp-ns}-input-action .#{$bp-ns}-icon {
+    color: inherit !important;
+    font-weight: inherit !important;
+  }
+
+  input {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+}

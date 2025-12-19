@@ -1,79 +1,67 @@
-import React, { Component, PureComponent } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Link } from 'react-router-dom';
-import { selectModel } from 'src/selectors';
-import { Icon } from './Icon';
+import { compose } from 'redux';
 
-class SchemaIcon extends PureComponent {
-  render() {
-    const { schema, ...rest } = this.props;
+import withRouter from 'app/withRouter';
+import { selectModel } from 'selectors';
+import { collectionSearchQuery } from 'queries';
+import { Schema as VLSchema, SchemaSelect } from 'react-ftm';
+import CollectionView from 'components/Collection/CollectionView';
+import collectionViewIds from 'components/Collection/collectionViewIds';
+
+function SchemaLink({ collection, location, schema, ...rest }) {
+  const viewProps = { collection };
+
+  if (schema.isDocument()) {
     return (
-      <Icon
-        className="entity-icon"
-        iconSize="16px"
-        {...rest}
-        name={schema.name.toLowerCase()}
+      <CollectionView.Link
+        collection={collection}
+        id={collectionViewIds.DOCUMENTS}
+        icon
       />
     );
-  }
-}
-
-class SchemaLabel extends Component {
-  render() {
-    const { schema, plural = false, icon } = this.props;
-    const label = plural ? schema.plural : schema.label;
-    if (icon) {
-      return (
-        <span>
-          <Schema.Icon schema={schema} />
-          {label}
-        </span>
+  } else {
+    if (collection.casefile) {
+      viewProps.id = collectionViewIds.ENTITIES;
+      viewProps.hash = { type: schema };
+    } else {
+      viewProps.id = collectionViewIds.SEARCH;
+      const query = collectionSearchQuery(location, collection.id).setFilter(
+        'schema',
+        schema
       );
+      viewProps.search = query.toLocation();
     }
-    return label;
   }
-}
 
-function SchemaLink(props) {
-  const { schema, plural, url } = props;
   return (
-    <React.Fragment>
-      <Schema.Icon schema={schema} />
-      <Link to={url}>
-        <Schema.Label schema={schema} icon={false} plural={plural} />
-      </Link>
-    </React.Fragment>
+    <CollectionView.Link {...viewProps}>
+      <VLSchema.Label schema={schema} icon={true} {...rest} />
+    </CollectionView.Link>
   );
 }
 
-function SmartSchemaHOC(InnerComponent) {
-  return function SmartSchemaComponent(props) {
-    const {
-      model, schema: schemaName,
-      /* omit */ dispatch,
-      ...rest
-    } = props;
-    const schema = model.getSchema(schemaName);
-    return (<InnerComponent schema={schema} {...rest} />
-    );
-  };
-}
+const SchemaDescription = ({ schema }) => {
+  return schema.description;
+};
 
-const mapStateToProps = state => ({
-  model: selectModel(state),
-});
+const mapStateToProps = (state, ownProps) => {
+  const { schema } = ownProps;
+  return { schema: selectModel(state).getSchema(schema) };
+};
 
 class Schema extends Component {
-  static Smart = {
-    Label: connect(mapStateToProps)(SmartSchemaHOC(SchemaLabel)),
-    Link: connect(mapStateToProps)(SmartSchemaHOC(SchemaLink)),
-  };
+  static Label = connect(mapStateToProps)(VLSchema.Label);
 
-  static Label = SchemaLabel;
+  static Icon = connect(mapStateToProps)(VLSchema.Icon);
 
-  static Icon = SchemaIcon;
+  static Link = compose(withRouter, connect(mapStateToProps))(SchemaLink);
 
-  static Link = SchemaLink;
+  static Description = connect(mapStateToProps)(SchemaDescription);
+
+  static Select = connect((state) => ({ model: selectModel(state) }))(
+    SchemaSelect
+  );
 }
 
 export default Schema;

@@ -1,112 +1,192 @@
+import datetime
 import logging
-from urllib.parse import urldefrag
+from urllib.parse import urlencode
+from flask_babel import gettext
+from flask import Blueprint, redirect, request, session
+from authlib.common.errors import AuthlibBaseError
+from werkzeug.exceptions import Unauthorized, BadRequest
+from prometheus_client import Counter
 
-from flask import Blueprint, redirect, request, abort
-from flask_oauthlib.client import OAuthException
-from werkzeug.exceptions import Unauthorized
-
-from aleph import signals, settings
-from aleph.core import db, url_for
+from aleph.settings import SETTINGS
+from aleph.core import db, url_for, cache
 from aleph.authz import Authz
-from aleph.oauth import oauth
-from aleph.model import Role, Audit
+from aleph.oauth import oauth, handle_oauth, OAuthError
+from aleph.model import Role, PasswordCredentialsError, RoleBlockedError
+from aleph.logic.util import ui_url
 from aleph.logic.roles import update_role
-from aleph.logic.audit import record_audit
-from aleph.views.forms import LoginSchema
-from aleph.views.util import get_best_next_url, parse_request, jsonify
+from aleph.views.util import get_url_path, parse_request
+from aleph.views.util import require, jsonify
 
 log = logging.getLogger(__name__)
-blueprint = Blueprint('sessions_api', __name__)
+blueprint = Blueprint("sessions_api", __name__)
+
+AUTH_ATTEMPTS = Counter(
+    "aleph_auth_attempts_total",
+    "Total number of successful/failed authentication attemps",
+    ["method", "result"],
+)
 
 
-def _get_credential_authz(credential):
-    if credential is None or not len(credential):
-        return
-    if ' ' in credential:
-        mechanism, credential = credential.split(' ', 1)
-    authz = Authz.from_token(credential, scope=request.path)
-    if authz is not None:
-        return authz
-
-    role = Role.by_api_key(credential)
-    if role is not None:
-        return Authz.from_role(role=role)
+def _oauth_session(token):
+    return cache.key("oauth-sess", token)
 
 
-@blueprint.before_app_request
-def decode_authz():
-    authz = None
-
-    if 'Authorization' in request.headers:
-        credential = request.headers.get('Authorization')
-        authz = _get_credential_authz(credential)
-
-    if authz is None and 'api_key' in request.args:
-        authz = _get_credential_authz(request.args.get('api_key'))
-
-    authz = authz or Authz.from_role(role=None)
-    request.authz = authz
+def _token_session(token):
+    return cache.key("oauth-id-tok", token)
 
 
-@blueprint.route('/api/2/sessions/login', methods=['POST'])
+@blueprint.route("/api/2/sessions/login", methods=["POST"])
 def password_login():
-    """Provides email and password authentication."""
-    data = parse_request(LoginSchema)
-    role = Role.by_email(data.get('email'))
-    if role is None or not role.has_password:
-        return Unauthorized("Authentication has failed.")
+    """Provides email and password authentication.
+    ---
+    post:
+      summary: Log in as a user
+      description: Create a session token using a username and password.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  token:
+                    type: string
+      tags:
+      - Role
+    """
+    require(SETTINGS.PASSWORD_LOGIN)
+    data = parse_request("Login")
+    try:
+        role = Role.login(data.get("email"), data.get("password"))
+    except PasswordCredentialsError:
+        AUTH_ATTEMPTS.labels(method="password", result="failed").inc()
+        # Raising a 400 error in this and the following case is technically
+        # not 100% correct. This seems to have been introduced in order to simplify
+        # error handling in the frontend. Raising a 401 error triggers a
+        # hard page reload and state invalidation etc.
+        raise BadRequest(gettext("Invalid user or password."))
+    except RoleBlockedError:
+        AUTH_ATTEMPTS.labels(method="password", result="failed").inc()
+        return jsonify(
+            {
+                "status": "error",
+                "message": "Your account has been blocked.",
+            },
+            status=403,
+        )
 
-    if not role.check_password(data.get('password')):
-        return Unauthorized("Authentication has failed.")
-
+    role.last_login_at = datetime.datetime.now(datetime.timezone.utc)
+    role.touch()
     db.session.commit()
+    AUTH_ATTEMPTS.labels(method="password", result="success").inc()
     update_role(role)
     authz = Authz.from_role(role)
-    request.authz = authz
-    record_audit(Audit.ACT_LOGIN)
-    return jsonify({
-        'status': 'ok',
-        'token': authz.to_token(role=role)
-    })
+    return jsonify({"status": "ok", "token": authz.to_token()})
 
 
-@blueprint.route('/api/2/sessions/oauth')
+@blueprint.route("/api/2/sessions/oauth")
 def oauth_init():
-    if not settings.OAUTH:
-        abort(404)
+    """Init OAuth auth flow.
+    ---
+    get:
+      summary: Start OAuth authentication
+      description: Initiate a forward to the OAuth server.
+      responses:
+        '302':
+          description: Redirect
+      tags:
+      - Role
+    """
+    require(SETTINGS.OAUTH)
+    url = url_for(".oauth_callback")
+    state = oauth.provider.create_authorization_url(url)
+    state["next_url"] = request.args.get("next", request.referrer)
+    state["redirect_uri"] = url
+    cache.set_complex(_oauth_session(state.get("state")), state, expires=3600)
+    return redirect(state["url"])
 
-    callback_url = url_for('.oauth_callback')
-    state = get_best_next_url(request.args.get('next'), request.referrer)
-    return oauth.provider.authorize(callback=callback_url, state=state)
 
-
-@blueprint.route('/api/2/sessions/callback')
+@blueprint.route("/api/2/sessions/callback")
 def oauth_callback():
-    if not settings.OAUTH:
-        abort(404)
+    require(SETTINGS.OAUTH)
+    err = Unauthorized(gettext("Authentication has failed."))
+    state = cache.get_complex(_oauth_session(request.args.get("state")))
+    if state is None:
+        AUTH_ATTEMPTS.labels(method="oauth", result="failed").inc()
+        raise err
 
-    resp = oauth.provider.authorized_response()
-    if resp is None or isinstance(resp, OAuthException):
-        log.warning("Failed OAuth: %r", resp)
-        return Unauthorized("Authentication has failed.")
+    try:
+        oauth.provider.framework.set_session_data(request, "state", state.get("state"))
+        uri = state.get("redirect_uri")
+        oauth_token = oauth.provider.authorize_access_token(redirect_uri=uri)
+    except AuthlibBaseError as err:
+        AUTH_ATTEMPTS.labels(method="oauth", result="failed").inc()
+        log.warning("Failed OAuth: %r", err)
+        raise err
+    if oauth_token is None or isinstance(oauth_token, AuthlibBaseError):
+        AUTH_ATTEMPTS.labels(method="oauth", result="failed").inc()
+        log.warning("Failed OAuth: %r", oauth_token)
+        raise err
 
-    response = signals.handle_oauth_session.send(provider=oauth.provider,
-                                                 oauth=resp)
-    for (_, role) in response:
-        if role is None:
-            continue
-        db.session.commit()
-        update_role(role)
-        log.info("Logged in: %r", role)
-        request.authz = Authz.from_role(role)
-        record_audit(Audit.ACT_LOGIN)
-        token = request.authz.to_token(role=role)
-        token = token.decode('utf-8')
-        state = request.args.get('state')
-        next_url = get_best_next_url(state, request.referrer)
-        next_url, _ = urldefrag(next_url)
-        next_url = '%s#token=%s' % (next_url, token)
-        return redirect(next_url)
+    try:
+        role = handle_oauth(oauth.provider, oauth_token)
+    except OAuthError:
+        AUTH_ATTEMPTS.labels(method="oauth", result="failed").inc()
+        raise err
+    except RoleBlockedError:
+        error_url = ui_url("oauth", status="error", code=403)
+        return redirect(error_url)
 
-    log.error("No OAuth handler for %r was installed.", oauth.provider.name)
-    return Unauthorized("Authentication has failed.")
+    role.last_login_at = datetime.datetime.now(datetime.timezone.utc)
+    db.session.commit()
+    update_role(role)
+    AUTH_ATTEMPTS.labels(method="oauth", result="success").inc()
+    log.debug("Logged in: %r", role)
+    request.authz = Authz.from_role(role)
+    token = request.authz.to_token()
+
+    # Store id_token to generate logout URL later
+    id_token = oauth_token.get("id_token")
+    if id_token is not None:
+        cache.set(_token_session(token), id_token, expires=SETTINGS.SESSION_EXPIRE)
+
+    next_path = get_url_path(state.get("next_url"))
+    next_url = ui_url("oauth", next=next_path)
+    next_url = f"{next_url}#token={token}"
+    session.clear()
+    return redirect(next_url)
+
+
+@blueprint.route("/api/2/sessions/logout", methods=["POST"])
+def logout():
+    """Destroy the current authz session (state).
+    ---
+    post:
+      summary: Destroy the current state.
+      responses:
+        '200':
+          description: Done
+      tags:
+      - Role
+    """
+    request.rate_limit = None
+    redirect_url = SETTINGS.APP_UI_URL
+    if SETTINGS.OAUTH:
+        metadata = oauth.provider.load_server_metadata()
+        logout_endpoint = metadata.get("end_session_endpoint")
+        if logout_endpoint is not None:
+            query = {
+                "post_logout_redirect_uri": redirect_url,
+                "id_token_hint": cache.get(_token_session(request.authz.token_id)),
+            }
+            redirect_url = logout_endpoint + "?" + urlencode(query)
+    request.authz.destroy()
+    return jsonify({"redirect": redirect_url})

@@ -1,27 +1,50 @@
-FROM alephdata/aleph-base:10
+FROM python:3.10
+ENV DEBIAN_FRONTEND noninteractive
+
+# build-essential
+RUN apt-get -qq -y update \
+  && apt-get -qq --no-install-recommends -y install locales \
+  postgresql-client jq python3-dev \
+  && apt-get -qq -y autoremove \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+
+ENV LANG='en_US.UTF-8'
+
+RUN groupadd -g 1000 -r app \
+  && useradd -m -u 1000 -s /bin/false -g app app
 
 # Install Python dependencies
-RUN pip3 install spacy==2.1.3
-RUN python3 -m spacy download xx
-COPY requirements-generic.txt /tmp/
-RUN pip3 install --no-cache-dir -r /tmp/requirements-generic.txt
-COPY requirements-toolkit.txt /tmp/
-RUN pip3 install --no-cache-dir -r /tmp/requirements-toolkit.txt
+RUN pip3 install --no-cache-dir -q -U pip setuptools six
+
+COPY requirements.txt /tmp/
+RUN pip3 install --no-cache-dir -q -r /tmp/requirements.txt
 
 # Install aleph
 COPY . /aleph
 WORKDIR /aleph
 ENV PYTHONPATH /aleph
-RUN pip install -e /aleph
-# RUN cd /usr/local/lib/python3.6/dist-packages && python3 /aleph/setup.py develop
+RUN pip install --no-cache-dir -q -e /aleph
+
+ENV ALEPH_WORD_FREQUENCY_URI=https://public.data.occrp.org/develop/models/word-frequencies/word_frequencies-v0.4.1.zip
+ENV ALEPH_FTM_COMPARE_MODEL_URI=https://public.data.occrp.org/develop/models/xref/glm_bernoulli_2e_wf-v0.4.1.pkl
+RUN mkdir -p /opt/ftm-compare/word-frequencies/ && \
+  curl -L -o "/opt/ftm-compare/word-frequencies/word-frequencies.zip" "$ALEPH_WORD_FREQUENCY_URI" && \
+  python3 -m zipfile --extract /opt/ftm-compare/word-frequencies/word-frequencies.zip /opt/ftm-compare/word-frequencies/ && \
+  curl -L -o "/opt/ftm-compare/model.pkl" "$ALEPH_FTM_COMPARE_MODEL_URI"
 
 # Configure some docker defaults:
-ENV C_FORCE_ROOT=true \
-    UNOSERVICE_URL=http://convert-document:3000/convert \
-    ALEPH_ELASTICSEARCH_URI=http://elasticsearch:9200/ \
-    ALEPH_DATABASE_URI=postgresql://aleph:aleph@postgres/aleph \
-    ALEPH_BROKER_URI=amqp://guest:guest@rabbitmq:5672 \
-    ARCHIVE_PATH=/data
+ENV ALEPH_ELASTICSEARCH_URI=http://elasticsearch:9200/ \
+  ALEPH_DATABASE_URI=postgresql://aleph:aleph@postgres/aleph \
+  FTM_STORE_URI=postgresql://aleph:aleph@postgres/aleph \
+  REDIS_URL=redis://redis:6379/0 \
+  ARCHIVE_TYPE=file \
+  ARCHIVE_PATH=/data \
+  FTM_COMPARE_FREQUENCIES_DIR=/opt/ftm-compare/word-frequencies/ \
+  FTM_COMPARE_MODEL=/opt/ftm-compare/model.pkl
+
+RUN mkdir /run/prometheus
 
 # Run the green unicorn
-CMD gunicorn -w 5 -b 0.0.0.0:8000 --log-level info --log-file - aleph.manage:app
+CMD gunicorn --config /aleph/gunicorn.conf.py --workers 6 --log-level debug --log-file -

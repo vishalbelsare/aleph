@@ -1,0 +1,64 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.InvestigationSidebar {
+  width: $aleph-investigation-sidebar-width;
+  flex-shrink: 0;
+  @include rtlSupportInvertedProp(
+    border,
+    right,
+    1px solid $aleph-border-color,
+    none
+  );
+  @include rtlSupportInvertedProp(margin, right, $aleph-content-padding, 0);
+  @include rtlSupportInvertedProp(padding, right, $aleph-content-padding, 0);
+
+  @media screen and (max-width: $aleph-screen-sm-max-width) {
+    width: 100%;
+    border: none !important;
+    border-bottom: 1px solid $aleph-border-color !important;
+    margin: 0 0 $aleph-content-padding !important;
+    padding: 0 0 $aleph-content-padding !important;
+  }
+
+  .SchemaCounts {
+    margin-bottom: $aleph-grid-size;
+  }
+
+  &__content {
+    padding: 0;
+
+    @media screen and (min-width: 450px) and (max-width: $aleph-screen-sm-max-width) {
+      display: flex;
+      align-items: flex-start;
+      margin: -$aleph-content-padding * 0.5;
+    }
+  }
+
+  &__section {
+    list-style: none;
+    padding: 15px;
+    border-radius: $aleph-border-radius;
+    background: $light-gray5;
+    margin: $aleph-content-padding 0;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    @media screen and (min-width: 450px) and (max-width: $aleph-screen-sm-max-width) {
+      width: 50%;
+      margin: $aleph-content-padding * 0.5;
+    }
+
+    &__title {
+      margin: 0;
+      padding: 0;
+    }
+
+    &__title .#{$bp-ns}-heading {
+      color: $aleph-investigation-theme;
+      padding-bottom: 5px;
+    }
+  }
+}

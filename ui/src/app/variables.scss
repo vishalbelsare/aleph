@@ -1,47 +1,58 @@
-@import "~@blueprintjs/core/lib/scss/variables";
-@import "~@blueprintjs/icons/lib/scss/variables";
+@import '~@blueprintjs/core/lib/scss/variables';
+@import '~@blueprintjs/icons/lib/scss/variables';
 
 $aleph-grid-size: $pt-grid-size;
 $aleph-font-size: $pt-font-size;
 $aleph-line-height: $pt-line-height;
 $aleph-border-radius: $pt-border-radius;
+$aleph-icon-padding: $aleph-grid-size * 0.5;
+$aleph-content-padding: $aleph-grid-size * 2.5;
+$aleph-mobile-content-padding: $aleph-grid-size * 2;
+$aleph-content-width-limit: 750px;
 
-$aleph-screen-sm-max-width: 575px;
+$aleph-screen-sm-max-width: 620px;
 $aleph-screen-md-max-width: 980px;
 $aleph-screen-lg-max-width: 1200px;
+$aleph-navbar-mobile-max-width: $aleph-screen-sm-max-width + $aleph-grid-size *
+  12;
 
-$aleph-page-background: $light-gray5;
+$aleph-breadcrumbs-background: $light-gray4;
+$aleph-page-background: white;
 $aleph-link-color: $pt-link-color;
-$aleph-visited-link-color: darken($aleph-link-color, 15%);
 // $aleph-sidebar-background: $dark-gray5;
 $aleph-sidebar-background: $pt-link-color;
 $aleph-sidebar-foreground: white;
 $aleph-facet-background: $light-gray4;
-$aleph-table-heading-background: $light-gray4;
+$aleph-query-tag-height: 36px;
+$aleph-table-heading-background: white;
 $aleph-table-border-color: $light-gray2;
 $aleph-content-background: white;
 $aleph-border-color: $light-gray2;
-$aleph-greyed-text: $gray3;
+
+$aleph-greyed-text: $pt-text-color-muted;
 $aleph-theme-intent: $aleph-link-color;
+$aleph-profile-dark: $gold2;
+$aleph-profile-light: $gold5;
+$aleph-profile-dark-visited: $gold1;
 
-$table-border: $light-gray3;
+$aleph-investigation-sidebar-width: $aleph-grid-size * 30;
+$aleph-investigation-theme: $blue1;
+$aleph-dataset-theme: rgba($dark-gray5, 0.8);
+
 $table-header-color: $blue3;
-$table-border-color: rgba(16, 22, 26, 0.15);
-
 
 $alpeh-preview-pane-width: 1024px;
 $aleph-single-pane-width: 1024px;
-$aleph-sidebar-width: $aleph-grid-size * 44;
-$aleph-infopane-md-width: $aleph-grid-size * 30;
+$aleph-sidebar-width: $aleph-grid-size * 35;
 $aleph-sidebar-sm-width: $aleph-grid-size * 20;
-$aleph-sidepane-md-width: $aleph-grid-size * 25;
+$aleph-sidepane-md-width: $aleph-grid-size * 27;
 
-$aleph-text-highlight-color: yellow;
-
+$aleph-text-highlight-color: rgba($gold5, 0.5);
+$aleph-visited-link-color: rgba($aleph-link-color, 0.6);
 $warning-border-color: #faebcc;
 $warning-background-color: #fcf8e3;
 $warning-text-color: #8a6d3b;
 
 $button-color-hover: #137cbd;
-$views-menu-background-color: rgba(92,112,128,0.5);
+$views-menu-background-color: rgba(92, 112, 128, 0.5);
 $aleph-error-highlight-color: rgb(212, 19, 13);

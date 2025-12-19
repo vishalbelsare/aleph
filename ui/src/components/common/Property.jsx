@@ -1,82 +1,92 @@
-import React, { Component, PureComponent } from 'react';
-import { FormattedMessage } from 'react-intl';
-
-import Entity from 'src/components/common/Entity';
+import React from 'react';
+import { connect } from 'react-redux';
 import {
-  Numeric, Country, Language, Date, URL,
-} from 'src/components/common';
-import wordList from 'src/util/wordList';
-import ensureArray from 'src/util/ensureArray';
+  EditableProperty as VLEditableProperty,
+  Property as VLProperty,
+} from 'react-ftm';
+import { Button } from '@blueprintjs/core';
+
+import { Entity } from 'components/common';
+import { selectLocale, selectModel } from 'selectors';
 
 import './Property.scss';
 
-class Value extends PureComponent {
+const getEntityLink = (entity) => <Entity.Link entity={entity} icon />;
+
+class EditableProperty extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = { editing: props.defaultEditing };
+  }
+
+  toggleEditing = () => {
+    this.setState(({ editing }) => ({ editing: !editing }));
+  };
+
   render() {
-    const { value, prop } = this.props;
-    if (!value) {
-      return null;
+    const {
+      onEdit,
+      createNewReferencedEntity,
+      prop,
+      entity,
+      emptyPlaceholder,
+      fetchEntitySuggestions,
+      minimal,
+      toggleButtonProps,
+      writeable,
+    } = this.props;
+    const { editing } = this.state;
+
+    const property = entity.schema.getProperty(prop);
+    const hasValue = entity.hasProperty(property);
+
+    if (!writeable && !hasValue) {
+      return emptyPlaceholder || null;
     }
-    if (prop.type.name === 'country') {
-      return <Country.Name code={value} />;
+
+    if (!editing && !hasValue && toggleButtonProps) {
+      return <Button {...toggleButtonProps} onClick={this.toggleEditing} />;
     }
-    if (prop.type.name === 'language') {
-      return <Language.Name code={value} />;
-    }
-    if (prop.type.name === 'url') {
-      return <URL value={value} />;
-    }
-    if (prop.type.name === 'entity') {
-      return <Entity.Link entity={value} icon />;
-    }
-    if (prop.type.name === 'date') {
-      return <Date value={value} />;
-    }
-    if (prop.type.name === 'number') {
-      return <Numeric num={value} />;
-    }
-    return value;
+
+    return (
+      <VLEditableProperty
+        entity={entity}
+        property={property}
+        editing={editing}
+        onToggleEdit={this.toggleEditing}
+        onSubmit={(entity) => {
+          this.toggleEditing();
+          onEdit(entity);
+        }}
+        fetchEntitySuggestions={fetchEntitySuggestions}
+        createNewReferencedEntity={createNewReferencedEntity}
+        minimal={minimal}
+        writeable={writeable}
+      />
+    );
   }
 }
 
-class Name extends PureComponent {
-  render() {
-    const { prop } = this.props;
-    return prop.label;
-  }
-}
+const mapStateToProps = (state) => ({
+  locale: selectLocale(state),
+  model: selectModel(state),
+});
 
-class Reverse extends PureComponent {
-  render() {
-    const { prop } = this.props;
-    if (!prop.hasReverse) {
-      return <FormattedMessage id="property.inverse" defaultMessage="'{label}' of …" values={prop} />;
-    }
-    const reverseProp = prop.getReverse();
-    return reverseProp.label;
-  }
-}
+class Property {
+  static Name = VLProperty.Name;
 
-class Values extends PureComponent {
-  render() {
-    const { prop, values } = this.props;
-    const vals = ensureArray(values).map(value => (
-      <Value key={value.toString()} prop={prop} value={value} />
-    ));
-    if (!vals.length) {
-      return (<span className="no-value">—</span>);
-    }
-    return (<span>{ wordList(vals, ' · ') }</span>);
-  }
-}
+  static Reverse = connect(mapStateToProps)(VLProperty.Reverse);
 
-class Property extends Component {
-    static Name = Name;
+  static Value = (props) => (
+    <VLProperty.Value {...props} getEntityLink={getEntityLink} />
+  );
 
-    static Reverse = Reverse;
+  static Values = (props) => (
+    <VLProperty.Values {...props} getEntityLink={getEntityLink} />
+  );
 
-    static Value = Value;
-
-    static Values = Values;
+  static Editable = connect(mapStateToProps)(EditableProperty);
 }
 
 export default Property;

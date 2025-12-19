@@ -1,0 +1,2354 @@
+{
+  "alert.manager.description": {
+    "defaultMessage": "You will receive notifications when a new result is added that matches any of the alerts you have set up below."
+  },
+  "alerts.add_placeholder": {
+    "defaultMessage": "Create a new tracking alert..."
+  },
+  "alerts.delete": {
+    "defaultMessage": "Remove alert"
+  },
+  "alerts.heading": {
+    "defaultMessage": "Upravljaj pretplatama"
+  },
+  "alerts.no_alerts": {
+    "defaultMessage": "Ne pratite nijednu pretragu"
+  },
+  "alerts.save": {
+    "defaultMessage": "Ažuriraj"
+  },
+  "alerts.title": {
+    "defaultMessage": "Tracking alerts"
+  },
+  "alerts.track": {
+    "defaultMessage": "Track"
+  },
+  "auth.bad_request": {
+    "defaultMessage": "Server nije prihvatio Vaš unos"
+  },
+  "auth.server_error": {
+    "defaultMessage": "Greška na serveru"
+  },
+  "auth.success": {
+    "defaultMessage": "Uspješno"
+  },
+  "auth.unauthorized": {
+    "defaultMessage": "Nije Vam dozvoljen pristup"
+  },
+  "auth.unknown_error": {
+    "defaultMessage": "Desila se neočekivana greška"
+  },
+  "bookmarks.bookmark": {
+    "defaultMessage": "Bookmark"
+  },
+  "bookmarks.bookmarked": {
+    "defaultMessage": "Bookmarked"
+  },
+  "bookmarks.empty": {
+    "defaultMessage": "You haven’t bookmarked anything yet. Add documents or entities such as people or companies to your bookmarks to easily get back to them later."
+  },
+  "bookmarks.title": {
+    "defaultMessage": "Your bookmarks"
+  },
+  "case.choose.name": {
+    "defaultMessage": "Title"
+  },
+  "case.choose.summary": {
+    "defaultMessage": "Opis"
+  },
+  "case.chose.languages": {
+    "defaultMessage": "Jezici"
+  },
+  "case.create.login": {
+    "defaultMessage": "You must sign in to upload your own data."
+  },
+  "case.description": {
+    "defaultMessage": "Investigations let you upload and share documents and data which belong to a particular story. You can upload PDFs, email archives or spreadsheets, and they will be made easy to search and browse."
+  },
+  "case.label_placeholder": {
+    "defaultMessage": "Untitled investigation"
+  },
+  "case.language_placeholder": {
+    "defaultMessage": "Select languages"
+  },
+  "case.languages.helper": {
+    "defaultMessage": "Used for optical text recognition in non-Latin alphabets."
+  },
+  "case.save": {
+    "defaultMessage": "Sačuvaj"
+  },
+  "case.summary": {
+    "defaultMessage": "A brief description of the investigation"
+  },
+  "case.title": {
+    "defaultMessage": "Create an investigation"
+  },
+  "case.users": {
+    "defaultMessage": "Pretraži korisnike"
+  },
+  "cases.create": {
+    "defaultMessage": "New investigation"
+  },
+  "cases.empty": {
+    "defaultMessage": "You do not have any investigations yet."
+  },
+  "cases.no_results": {
+    "defaultMessage": "No investigations were found matching this query."
+  },
+  "cases.placeholder": {
+    "defaultMessage": "Search investigations..."
+  },
+  "cases.title": {
+    "defaultMessage": "Investigations"
+  },
+  "clipboard.copy.after": {
+    "defaultMessage": "Successfully copied to clipboard"
+  },
+  "clipboard.copy.before": {
+    "defaultMessage": "Copy to clipboard"
+  },
+  "collection.addSchema.placeholder": {
+    "defaultMessage": "Add new entity type"
+  },
+  "collection.analyze.alert.text": {
+    "defaultMessage": "You're about to re-index the entities in {collectionLabel}. This can be helpful if there are inconsistencies in how the data is presented."
+  },
+  "collection.analyze.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "collection.cancel.button": {
+    "defaultMessage": "Otkaži"
+  },
+  "collection.countries": {
+    "defaultMessage": "Država"
+  },
+  "collection.creator": {
+    "defaultMessage": "Upravitelj"
+  },
+  "collection.data_updated_at": {
+    "defaultMessage": "Content updated"
+  },
+  "collection.data_url": {
+    "defaultMessage": "Data URL"
+  },
+  "collection.delete.confirm": {
+    "defaultMessage": "I understand the consequences."
+  },
+  "collection.delete.confirm.dataset": {
+    "defaultMessage": "Delete this dataset."
+  },
+  "collection.delete.confirm.investigation": {
+    "defaultMessage": "Delete this investigation."
+  },
+  "collection.delete.question": {
+    "defaultMessage": "Are you sure you want to permanently delete {collectionLabel} and all contained items? This cannot be undone."
+  },
+  "collection.delete.success": {
+    "defaultMessage": "Successfully deleted {label}"
+  },
+  "collection.delete.title.dataset": {
+    "defaultMessage": "Delete dataset"
+  },
+  "collection.delete.title.investigation": {
+    "defaultMessage": "Delete investigation"
+  },
+  "collection.edit.access_title": {
+    "defaultMessage": "Kontrola pristupa"
+  },
+  "collection.edit.cancel_button": {
+    "defaultMessage": "Otkaži"
+  },
+  "collection.edit.groups": {
+    "defaultMessage": "Grupe"
+  },
+  "collection.edit.info.analyze": {
+    "defaultMessage": "Re-process"
+  },
+  "collection.edit.info.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "collection.edit.info.category": {
+    "defaultMessage": "Kategorija"
+  },
+  "collection.edit.info.countries": {
+    "defaultMessage": "Države"
+  },
+  "collection.edit.info.creator": {
+    "defaultMessage": "Upravitelj"
+  },
+  "collection.edit.info.data_url": {
+    "defaultMessage": "Data source URL"
+  },
+  "collection.edit.info.delete": {
+    "defaultMessage": "Izbriši"
+  },
+  "collection.edit.info.foreign_id": {
+    "defaultMessage": "Foreign ID"
+  },
+  "collection.edit.info.frequency": {
+    "defaultMessage": "Update frequency"
+  },
+  "collection.edit.info.info_url": {
+    "defaultMessage": "Information URL"
+  },
+  "collection.edit.info.label": {
+    "defaultMessage": "Oznaka"
+  },
+  "collection.edit.info.languages": {
+    "defaultMessage": "Jezici"
+  },
+  "collection.edit.info.placeholder_country": {
+    "defaultMessage": "Select countries"
+  },
+  "collection.edit.info.placeholder_data_url": {
+    "defaultMessage": "Link to the raw data in a downloadable form"
+  },
+  "collection.edit.info.placeholder_info_url": {
+    "defaultMessage": "Link to further information"
+  },
+  "collection.edit.info.placeholder_label": {
+    "defaultMessage": "Labela"
+  },
+  "collection.edit.info.placeholder_language": {
+    "defaultMessage": "Select languages"
+  },
+  "collection.edit.info.placeholder_publisher": {
+    "defaultMessage": "Organisation or person publishing this data"
+  },
+  "collection.edit.info.placeholder_publisher_url": {
+    "defaultMessage": "Link to the publisher"
+  },
+  "collection.edit.info.placeholder_summary": {
+    "defaultMessage": "Sažetak"
+  },
+  "collection.edit.info.publisher": {
+    "defaultMessage": "Publisher"
+  },
+  "collection.edit.info.publisher_url": {
+    "defaultMessage": "Publisher URL"
+  },
+  "collection.edit.info.restricted": {
+    "defaultMessage": "This dataset is restricted and viewers should be warned."
+  },
+  "collection.edit.info.save": {
+    "defaultMessage": "Sačuvaj izmjene"
+  },
+  "collection.edit.info.summary": {
+    "defaultMessage": "Opis"
+  },
+  "collection.edit.permissions_warning": {
+    "defaultMessage": "Note: User must already have an Aleph account in order to receive access."
+  },
+  "collection.edit.permissionstable.edit": {
+    "defaultMessage": "Uredi"
+  },
+  "collection.edit.permissionstable.view": {
+    "defaultMessage": "Pregled"
+  },
+  "collection.edit.save_button": {
+    "defaultMessage": "Sačuvaj izmjene"
+  },
+  "collection.edit.save_success": {
+    "defaultMessage": "Vaše izmjene su sačuvane."
+  },
+  "collection.edit.title": {
+    "defaultMessage": "Podešavanja"
+  },
+  "collection.edit.users": {
+    "defaultMessage": "Korisnici"
+  },
+  "collection.foreign_id": {
+    "defaultMessage": "Foreign ID"
+  },
+  "collection.frequency": {
+    "defaultMessage": "Updates"
+  },
+  "collection.index.empty": {
+    "defaultMessage": "No datasets were found."
+  },
+  "collection.index.filter.all": {
+    "defaultMessage": "All"
+  },
+  "collection.index.filter.mine": {
+    "defaultMessage": "Created by me"
+  },
+  "collection.index.no_results": {
+    "defaultMessage": "No datasets were found matching this query."
+  },
+  "collection.index.placeholder": {
+    "defaultMessage": "Search datasets..."
+  },
+  "collection.index.title": {
+    "defaultMessage": "Datasets"
+  },
+  "collection.info.access": {
+    "defaultMessage": "Share"
+  },
+  "collection.info.browse": {
+    "defaultMessage": "Documents"
+  },
+  "collection.info.delete": {
+    "defaultMessage": "Delete dataset"
+  },
+  "collection.info.delete_casefile": {
+    "defaultMessage": "Delete investigation"
+  },
+  "collection.info.diagrams": {
+    "defaultMessage": "Network diagrams"
+  },
+  "collection.info.diagrams_description": {
+    "defaultMessage": "Network diagrams let you visualize complex relationships within an investigation."
+  },
+  "collection.info.documents": {
+    "defaultMessage": "Documents"
+  },
+  "collection.info.edit": {
+    "defaultMessage": "Podešavanja"
+  },
+  "collection.info.entities": {
+    "defaultMessage": "Entities"
+  },
+  "collection.info.lists": {
+    "defaultMessage": "Lists"
+  },
+  "collection.info.lists_description": {
+    "defaultMessage": "Lists let you organize and group related entities of interest."
+  },
+  "collection.info.mappings": {
+    "defaultMessage": "Entity mappings"
+  },
+  "collection.info.mappings_description": {
+    "defaultMessage": "Entity mappings allow you to bulk generate structured Follow the Money entities (like People, Companies, and the relationships among them) from rows in a spreadsheet or CSV document"
+  },
+  "collection.info.mentions": {
+    "defaultMessage": "Mentions"
+  },
+  "collection.info.mentions_description": {
+    "defaultMessage": "Aleph automatically extracts terms that resemble names, address, phone numbers, and email addresses from uploaded documents and entities within your investigation. {br}{br} Click on a mentioned term below to find where it appears in your investigation."
+  },
+  "collection.info.overview": {
+    "defaultMessage": "Sažetak"
+  },
+  "collection.info.reindex": {
+    "defaultMessage": "Re-index all content"
+  },
+  "collection.info.reingest": {
+    "defaultMessage": "Re-ingest documents"
+  },
+  "collection.info.search": {
+    "defaultMessage": "Pretraži"
+  },
+  "collection.info.source_documents": {
+    "defaultMessage": "Source documents"
+  },
+  "collection.info.timelines": {
+    "defaultMessage": "Timelines"
+  },
+  "collection.info.timelines_description": {
+    "defaultMessage": "Timelines are a way to view and organize events chronologically."
+  },
+  "collection.info.xref": {
+    "defaultMessage": "Povezane reference"
+  },
+  "collection.info.xref_description": {
+    "defaultMessage": "Cross-referencing allows you to search the rest of Aleph for entities similar to those contained in your investigation."
+  },
+  "collection.info_url": {
+    "defaultMessage": "Information URL"
+  },
+  "collection.last_updated": {
+    "defaultMessage": "Last updated {date}"
+  },
+  "collection.mappings.create": {
+    "defaultMessage": "Create a new entity mapping"
+  },
+  "collection.mappings.create_docs_link": {
+    "defaultMessage": "For more information, please refer to the {link}."
+  },
+  "collection.overview.empty": {
+    "defaultMessage": "This dataset is empty."
+  },
+  "collection.publisher": {
+    "defaultMessage": "Publisher"
+  },
+  "collection.reconcile": {
+    "defaultMessage": "Reconciliation"
+  },
+  "collection.reconcile.description": {
+    "defaultMessage": "Match your own data against the entities in this collection using the free {openrefine} tool by adding the reconciliation endpoint."
+  },
+  "collection.reindex.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "collection.reindex.confirm": {
+    "defaultMessage": "Start indexing"
+  },
+  "collection.reindex.flush": {
+    "defaultMessage": "Clear index before re-indexing"
+  },
+  "collection.reindex.processing": {
+    "defaultMessage": "Indexing started."
+  },
+  "collection.reingest.confirm": {
+    "defaultMessage": "Start processing"
+  },
+  "collection.reingest.index": {
+    "defaultMessage": "Index documents as they are processed."
+  },
+  "collection.reingest.processing": {
+    "defaultMessage": "Re-ingest started."
+  },
+  "collection.reingest.text": {
+    "defaultMessage": "You're about to re-process all documents in {collectionLabel}. This might take some time."
+  },
+  "collection.statistics.showmore": {
+    "defaultMessage": "Show more"
+  },
+  "collection.status.cancel_button": {
+    "defaultMessage": "Cancel the process"
+  },
+  "collection.status.collection": {
+    "defaultMessage": "Dataset"
+  },
+  "collection.status.finished_tasks": {
+    "defaultMessage": "Finished"
+  },
+  "collection.status.message": {
+    "defaultMessage": "Continue to frolic about while data is being processed."
+  },
+  "collection.status.no_active": {
+    "defaultMessage": "There are no ongoing tasks"
+  },
+  "collection.status.pending_tasks": {
+    "defaultMessage": "Pending"
+  },
+  "collection.status.progress": {
+    "defaultMessage": "Tasks"
+  },
+  "collection.status.title": {
+    "defaultMessage": "Update in progress ({percent}%)"
+  },
+  "collection.team": {
+    "defaultMessage": "Accessible to"
+  },
+  "collection.updated_at": {
+    "defaultMessage": "Metadata updated"
+  },
+  "collection.xref.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "collection.xref.confirm": {
+    "defaultMessage": "Confirm"
+  },
+  "collection.xref.empty": {
+    "defaultMessage": "There are no cross-referencing results."
+  },
+  "collection.xref.processing": {
+    "defaultMessage": "Cross-referencing started."
+  },
+  "collection.xref.text": {
+    "defaultMessage": "You will now cross-reference {collectionLabel} against all other sources. Start this process once and then wait for it to complete."
+  },
+  "collection.xref.title": {
+    "defaultMessage": "Povezane reference"
+  },
+  "dashboard.activity": {
+    "defaultMessage": "Activity"
+  },
+  "dashboard.alerts": {
+    "defaultMessage": "Pretplata"
+  },
+  "dashboard.cases": {
+    "defaultMessage": "Investigations"
+  },
+  "dashboard.diagrams": {
+    "defaultMessage": "Network diagrams"
+  },
+  "dashboard.exports": {
+    "defaultMessage": "Exports"
+  },
+  "dashboard.groups": {
+    "defaultMessage": "Grupe"
+  },
+  "dashboard.lists": {
+    "defaultMessage": "Lists"
+  },
+  "dashboard.notifications": {
+    "defaultMessage": "Notifikacije"
+  },
+  "dashboard.settings": {
+    "defaultMessage": "Podešavanja"
+  },
+  "dashboard.status": {
+    "defaultMessage": "System status"
+  },
+  "dashboard.subheading": {
+    "defaultMessage": "Check the progress of ongoing data analysis, upload, and processing tasks."
+  },
+  "dashboard.timelines": {
+    "defaultMessage": "Timelines"
+  },
+  "dashboard.title": {
+    "defaultMessage": "System Status"
+  },
+  "dashboard.workspace": {
+    "defaultMessage": "Workspace"
+  },
+  "dataset.search.placeholder": {
+    "defaultMessage": "Search this dataset"
+  },
+  "delete_dialog.confirmation_label": {
+    "defaultMessage": "Confirmation"
+  },
+  "delete_dialog.enter_label": {
+    "defaultMessage": "Please enter {expectedConfirmationValue} to confirm:"
+  },
+  "diagram.create.button": {
+    "defaultMessage": "New diagram"
+  },
+  "diagram.create.label_placeholder": {
+    "defaultMessage": "Untitled diagram"
+  },
+  "diagram.create.login": {
+    "defaultMessage": "You must log in to create a diagram"
+  },
+  "diagram.create.success": {
+    "defaultMessage": "Your diagram has been created successfully."
+  },
+  "diagram.create.summary_placeholder": {
+    "defaultMessage": "A brief description of the diagram"
+  },
+  "diagram.create.title": {
+    "defaultMessage": "Create a diagram"
+  },
+  "diagram.export.error": {
+    "defaultMessage": "Error exporting diagram"
+  },
+  "diagram.import.button": {
+    "defaultMessage": "Import diagram"
+  },
+  "diagram.import.placeholder": {
+    "defaultMessage": "Drop a .ftm or .vis file here or click to import an existing diagram"
+  },
+  "diagram.import.title": {
+    "defaultMessage": "Import a network diagram"
+  },
+  "diagram.render.error": {
+    "defaultMessage": "Error rendering diagram"
+  },
+  "diagram.selector.create": {
+    "defaultMessage": "Create a new diagram"
+  },
+  "diagram.selector.select_empty": {
+    "defaultMessage": "No existing diagram"
+  },
+  "diagram.update.label_placeholder": {
+    "defaultMessage": "Untitled diagram"
+  },
+  "diagram.update.success": {
+    "defaultMessage": "Your diagram has been updated successfully."
+  },
+  "diagram.update.summary_placeholder": {
+    "defaultMessage": "A brief description of the diagram"
+  },
+  "diagram.update.title": {
+    "defaultMessage": "Diagram settings"
+  },
+  "diagrams": {
+    "defaultMessage": "Diagrams"
+  },
+  "diagrams.description": {
+    "defaultMessage": "Network diagrams let you visualize complex relationships within an investigation."
+  },
+  "diagrams.no_diagrams": {
+    "defaultMessage": "There are no network diagrams."
+  },
+  "diagrams.title": {
+    "defaultMessage": "Network diagrams"
+  },
+  "dialog.edge_create.source_label": {
+    "defaultMessage": "Izvor"
+  },
+  "dialog.edge_create.submit": {
+    "defaultMessage": "Kreiraj"
+  },
+  "dialog.edge_create.target_label": {
+    "defaultMessage": "Target"
+  },
+  "dialog.edge_create.title": {
+    "defaultMessage": "Add link"
+  },
+  "dialog.edge_create.type_label": {
+    "defaultMessage": "Tip"
+  },
+  "dialog.edge_create.type_placeholder": {
+    "defaultMessage": "Select type"
+  },
+  "dialog.grouping_create.placeholder": {
+    "defaultMessage": "Select a label for the grouping"
+  },
+  "dialog.grouping_create.title": {
+    "defaultMessage": "Group items"
+  },
+  "dialog.settings.pivot_types.help_text": {
+    "defaultMessage": "The selected property types above will be used to draw connections between nodes when values are shared"
+  },
+  "dialog.settings.pivot_types.label": {
+    "defaultMessage": "Connect shared values"
+  },
+  "dialog.settings.submit": {
+    "defaultMessage": "Sačuvaj izmjene"
+  },
+  "dialog.settings.title": {
+    "defaultMessage": "Podešavanja"
+  },
+  "dialog.vertex_create.no_suggestions": {
+    "defaultMessage": "No suggestions found"
+  },
+  "dialog.vertex_create.title": {
+    "defaultMessage": "Add entity"
+  },
+  "dialog.vertex_create.type_placeholder": {
+    "defaultMessage": "Pick a type"
+  },
+  "document.download": {
+    "defaultMessage": "Preuzmi"
+  },
+  "document.download.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "document.download.confirm": {
+    "defaultMessage": "Preuzmi"
+  },
+  "document.download.dont_warn": {
+    "defaultMessage": "Don't warn me in the future when downloading source documents"
+  },
+  "document.download.tooltip": {
+    "defaultMessage": "Preuzmi originalni dokument"
+  },
+  "document.download.warning": {
+    "defaultMessage": "<bold>You’re about to download a source file.</bold> {br}{br} Source files can contain viruses and code that notify the originator when you open them. {br}{br} For sensitive data, we recommend only opening source files on a computer that is permanently disconnected from the internet."
+  },
+  "document.folder.error": {
+    "defaultMessage": "There was an error creating the folder."
+  },
+  "document.folder.new": {
+    "defaultMessage": "Nova datoteka"
+  },
+  "document.folder.save": {
+    "defaultMessage": "Kreiraj"
+  },
+  "document.folder.title": {
+    "defaultMessage": "Nova datoteka"
+  },
+  "document.folder.untitled": {
+    "defaultMessage": "Naziv foldera"
+  },
+  "document.mapping.start": {
+    "defaultMessage": "Generate entities"
+  },
+  "document.paging": {
+    "defaultMessage": "Page {pageInput} of {numberOfPages}"
+  },
+  "document.pdf.search.page": {
+    "defaultMessage": "Page {page}"
+  },
+  "document.report_problem": {
+    "defaultMessage": "Report a problem"
+  },
+  "document.report_problem.text": {
+    "defaultMessage": "You can now easily report such problems to the Aleph team. This helps us improve how Aleph processes and displays documents."
+  },
+  "document.report_problem.title": {
+    "defaultMessage": "Does the document preview look strange? Is the extracted text incorrect, or is the information incomplete?"
+  },
+  "document.search.no_match": {
+    "defaultMessage": "No single page within this document matches all your search terms."
+  },
+  "document.upload.button": {
+    "defaultMessage": "Unos"
+  },
+  "document.upload.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "document.upload.close": {
+    "defaultMessage": "Close"
+  },
+  "document.upload.errors": {
+    "defaultMessage": "Some files couldn't be transferred. You can use the Retry button to restart all failed uploads."
+  },
+  "document.upload.files": {
+    "defaultMessage": "Izaberi fajlove za unos..."
+  },
+  "document.upload.folder": {
+    "defaultMessage": "If you would like to upload folders instead, { button }."
+  },
+  "document.upload.folder-toggle": {
+    "defaultMessage": "click here"
+  },
+  "document.upload.info": {
+    "defaultMessage": "If you need to upload a large amount of files (100+) consider {link}."
+  },
+  "document.upload.notice": {
+    "defaultMessage": "The upload is complete. It will take a few moments for the documents to be processed and become searchable."
+  },
+  "document.upload.progress": {
+    "defaultMessage": "{done} of {total} files done, {errors} errors."
+  },
+  "document.upload.rejected": {
+    "defaultMessage": "{fileName} is missing a file type, so it cannot be uploaded."
+  },
+  "document.upload.retry": {
+    "defaultMessage": "Retry"
+  },
+  "document.upload.save": {
+    "defaultMessage": "Unos"
+  },
+  "document.upload.summary": {
+    "defaultMessage": "{numberOfFiles, number} files, {totalSize}"
+  },
+  "document.upload.title": {
+    "defaultMessage": "Unos dokumenata"
+  },
+  "document.upload.title_in_folder": {
+    "defaultMessage": "Upload documents to {folder}"
+  },
+  "document.viewer.ignored_file": {
+    "defaultMessage": "Sistem ne podržava ovaj tip dokumenta. Molimo vas da ga preuzmete kako bi bili u mogućnosti da ga vidite."
+  },
+  "document.viewer.no_viewer": {
+    "defaultMessage": "Pregled ovog dokumenta nije dostupan"
+  },
+  "editor.color_picker.blue": {
+    "defaultMessage": "Blue"
+  },
+  "editor.color_picker.custom": {
+    "defaultMessage": "Custom"
+  },
+  "editor.color_picker.green": {
+    "defaultMessage": "Green"
+  },
+  "editor.color_picker.orange": {
+    "defaultMessage": "Orange"
+  },
+  "editor.color_picker.red": {
+    "defaultMessage": "Red"
+  },
+  "editor.color_picker.turquoise": {
+    "defaultMessage": "Turquoise"
+  },
+  "editor.color_picker.violet": {
+    "defaultMessage": "Violet"
+  },
+  "editor.entity.create_entity": {
+    "defaultMessage": "Create a new entity"
+  },
+  "editor.entity.no_results": {
+    "defaultMessage": "No existing entities found"
+  },
+  "editor.entity.placeholder": {
+    "defaultMessage": "Select an entity"
+  },
+  "editor.property_add": {
+    "defaultMessage": "Add a property"
+  },
+  "editor.validation.country_invalid": {
+    "defaultMessage": "Invalid country"
+  },
+  "editor.validation.date_invalid": {
+    "defaultMessage": "Date format: yyyy-m-d"
+  },
+  "editor.validation.phone_invalid": {
+    "defaultMessage": "Invalid phone number: try adding a country code if available"
+  },
+  "editor.validation.required": {
+    "defaultMessage": "This property is required"
+  },
+  "editor.validation.topic_invalid": {
+    "defaultMessage": "Invalid topic"
+  },
+  "editor.validation.url_invalid": {
+    "defaultMessage": "Invalid URL format"
+  },
+  "email.body.empty": {
+    "defaultMessage": "Nema sadržaja."
+  },
+  "entity.delete.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "entity.delete.confirm": {
+    "defaultMessage": "Izbriši"
+  },
+  "entity.delete.error": {
+    "defaultMessage": "An error occured while attempting to delete this entity."
+  },
+  "entity.delete.progress": {
+    "defaultMessage": "Deleting..."
+  },
+  "entity.delete.question.multiple": {
+    "defaultMessage": "Are you sure you want to delete the following {count, plural, one {item} other {items}}?"
+  },
+  "entity.delete.success": {
+    "defaultMessage": "Successfully deleted"
+  },
+  "entity.document.manager.cannot_map": {
+    "defaultMessage": "Select a table document to generate structured entities"
+  },
+  "entity.document.manager.empty": {
+    "defaultMessage": "No files or directories."
+  },
+  "entity.document.manager.emptyCanUpload": {
+    "defaultMessage": "No files or directories. Drop files here or click to upload."
+  },
+  "entity.document.manager.search_placeholder": {
+    "defaultMessage": "Search documents"
+  },
+  "entity.document.manager.search_placeholder_document": {
+    "defaultMessage": "Search in {label}"
+  },
+  "entity.info.attachments": {
+    "defaultMessage": "Prilozi"
+  },
+  "entity.info.documents": {
+    "defaultMessage": "Documents"
+  },
+  "entity.info.info": {
+    "defaultMessage": "Informacije"
+  },
+  "entity.info.last_view": {
+    "defaultMessage": "Last viewed {time}"
+  },
+  "entity.info.similar": {
+    "defaultMessage": "Slično"
+  },
+  "entity.info.tags": {
+    "defaultMessage": "Mentions"
+  },
+  "entity.info.text": {
+    "defaultMessage": "Tekst"
+  },
+  "entity.info.view": {
+    "defaultMessage": "Pregled"
+  },
+  "entity.info.workbook_warning": {
+    "defaultMessage": "This sheet is part of workbook {link}"
+  },
+  "entity.manager.bulk_import.description.1": {
+    "defaultMessage": "Select a table below from which to import new {schema} entities."
+  },
+  "entity.manager.bulk_import.description.2": {
+    "defaultMessage": "Once selected, you will be prompted to assign columns from that table to properties of the generated entities."
+  },
+  "entity.manager.bulk_import.description.3": {
+    "defaultMessage": "Don't see the table you're looking for? {link}"
+  },
+  "entity.manager.bulk_import.link_text": {
+    "defaultMessage": "Upload a new table document"
+  },
+  "entity.manager.bulk_import.no_results": {
+    "defaultMessage": "No matching documents found"
+  },
+  "entity.manager.bulk_import.placeholder": {
+    "defaultMessage": "Select a table document"
+  },
+  "entity.manager.delete": {
+    "defaultMessage": "Izbriši"
+  },
+  "entity.manager.edge_create_success": {
+    "defaultMessage": "Successfully linked {source} and {target}"
+  },
+  "entity.manager.entity_set_add_success": {
+    "defaultMessage": "Successfully added {count} {count, plural, one {entity} other {entities}} to {entitySet}"
+  },
+  "entity.manager.remove": {
+    "defaultMessage": "Ukloni"
+  },
+  "entity.manager.search_empty": {
+    "defaultMessage": "No matching {schema} results found"
+  },
+  "entity.manager.search_placeholder": {
+    "defaultMessage": "Search {schema}"
+  },
+  "entity.mapping.view": {
+    "defaultMessage": "Generate entities"
+  },
+  "entity.properties.missing": {
+    "defaultMessage": "unknown"
+  },
+  "entity.references.no_relationships": {
+    "defaultMessage": "Entitet nema nikakve veze."
+  },
+  "entity.references.no_results": {
+    "defaultMessage": "No {schema} match this search."
+  },
+  "entity.references.no_results_default": {
+    "defaultMessage": "No entities match this search."
+  },
+  "entity.references.search.placeholder": {
+    "defaultMessage": "Search in {schema}"
+  },
+  "entity.references.search.placeholder_default": {
+    "defaultMessage": "Search entities"
+  },
+  "entity.remove.confirm": {
+    "defaultMessage": "Ukloni"
+  },
+  "entity.remove.error": {
+    "defaultMessage": "An error occured while attempting to remove this entity."
+  },
+  "entity.remove.progress": {
+    "defaultMessage": "Removing..."
+  },
+  "entity.remove.question.multiple": {
+    "defaultMessage": "Are you sure you want to remove the following {count, plural, one {item} other {items}}?"
+  },
+  "entity.remove.success": {
+    "defaultMessage": "Successfully removed"
+  },
+  "entity.search.empty_title": {
+    "defaultMessage": "Ova datoteka je prazna"
+  },
+  "entity.search.no_results_description": {
+    "defaultMessage": "Pokušajte opširniji pojam za pretragu"
+  },
+  "entity.search.no_results_title": {
+    "defaultMessage": "Nema rezultata pretrage"
+  },
+  "entity.similar.empty": {
+    "defaultMessage": "There are no similar entities."
+  },
+  "entity.similar.entity": {
+    "defaultMessage": "Similar entity"
+  },
+  "entity.similar.found_text": {
+    "defaultMessage": "Found {resultCount} {resultCount, plural, one {similar entity} other {similar entities}} from {datasetCount} {datasetCount, plural, one {dataset} other {datasets}}"
+  },
+  "entity.status.error": {
+    "defaultMessage": "Error saving"
+  },
+  "entity.status.in_progress": {
+    "defaultMessage": "Saving"
+  },
+  "entity.status.offline": {
+    "defaultMessage": "Offline"
+  },
+  "entity.status.success": {
+    "defaultMessage": "Saved"
+  },
+  "entity.tags.no_tags": {
+    "defaultMessage": "No selectors were extracted from this entity."
+  },
+  "entity.viewer.add_link": {
+    "defaultMessage": "Create link"
+  },
+  "entity.viewer.add_to": {
+    "defaultMessage": "Add to..."
+  },
+  "entity.viewer.bulk_import": {
+    "defaultMessage": "Bulk import"
+  },
+  "entity.viewer.search_placeholder": {
+    "defaultMessage": "Search in {label}"
+  },
+  "entitySet.last_updated": {
+    "defaultMessage": "Ažurirano {date}"
+  },
+  "entityset.choose.name": {
+    "defaultMessage": "Title"
+  },
+  "entityset.choose.summary": {
+    "defaultMessage": "Opis"
+  },
+  "entityset.create.collection": {
+    "defaultMessage": "Investigation"
+  },
+  "entityset.create.collection.existing": {
+    "defaultMessage": "Select an investigation"
+  },
+  "entityset.create.collection.new": {
+    "defaultMessage": "Don't see the investigation you're looking for? {link}"
+  },
+  "entityset.create.collection.new_link": {
+    "defaultMessage": "Create a new investigation"
+  },
+  "entityset.create.submit": {
+    "defaultMessage": "Kreiraj"
+  },
+  "entityset.delete.confirm": {
+    "defaultMessage": "I understand the consequences."
+  },
+  "entityset.delete.confirm.diagram": {
+    "defaultMessage": "Delete this network diagram."
+  },
+  "entityset.delete.confirm.list": {
+    "defaultMessage": "Delete this list."
+  },
+  "entityset.delete.confirm.profile": {
+    "defaultMessage": "Delete this profile."
+  },
+  "entityset.delete.confirm.timeline": {
+    "defaultMessage": "Delete this timeline."
+  },
+  "entityset.delete.question": {
+    "defaultMessage": "Are you sure you want to permanently delete {label}? This cannot be undone."
+  },
+  "entityset.delete.success": {
+    "defaultMessage": "Successfully deleted {title}"
+  },
+  "entityset.delete.title.diagram": {
+    "defaultMessage": "Delete network diagram"
+  },
+  "entityset.delete.title.list": {
+    "defaultMessage": "Delete list"
+  },
+  "entityset.delete.title.profile": {
+    "defaultMessage": "Delete profile"
+  },
+  "entityset.delete.title.timeline": {
+    "defaultMessage": "Delete timeline"
+  },
+  "entityset.info.delete": {
+    "defaultMessage": "Izbriši"
+  },
+  "entityset.info.edit": {
+    "defaultMessage": "Podešavanja"
+  },
+  "entityset.info.export": {
+    "defaultMessage": "Export"
+  },
+  "entityset.info.exportAsSvg": {
+    "defaultMessage": "Export as SVG"
+  },
+  "entityset.selector.placeholder": {
+    "defaultMessage": "Search existing"
+  },
+  "entityset.selector.success": {
+    "defaultMessage": "Successfully added {count} {count, plural, one {entity} other {entities}} to {entitySet}"
+  },
+  "entityset.selector.success_toast_button": {
+    "defaultMessage": "Pregled"
+  },
+  "entityset.selector.title": {
+    "defaultMessage": "Add {firstCaption} {titleSecondary} to..."
+  },
+  "entityset.selector.title_default": {
+    "defaultMessage": "Add entities to..."
+  },
+  "entityset.selector.title_other": {
+    "defaultMessage": "and {count} other {count, plural, one {entity} other {entities}}"
+  },
+  "entityset.update.submit": {
+    "defaultMessage": "Sačuvaj izmjene"
+  },
+  "enum_value_select.no_results": {
+    "defaultMessage": "No results found"
+  },
+  "error.screen.not_found": {
+    "defaultMessage": "Tražena stranica nije pronađena."
+  },
+  "export.dialog.text": {
+    "defaultMessage": "<bold>Initiate your export.</bold> {br}{br} Exports take some time to generate. You will receive an email once the data is ready. {br}{br} Please trigger this export only once."
+  },
+  "exports.dialog.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "exports.dialog.confirm": {
+    "defaultMessage": "Export"
+  },
+  "exports.dialog.dashboard_link": {
+    "defaultMessage": "View progress"
+  },
+  "exports.dialog.success": {
+    "defaultMessage": "Your export has begun."
+  },
+  "exports.expiration": {
+    "defaultMessage": "Expiration"
+  },
+  "exports.manager.description": {
+    "defaultMessage": "Below is a list of your exports. Make sure to download them before they expire."
+  },
+  "exports.name": {
+    "defaultMessage": "Ime"
+  },
+  "exports.no_exports": {
+    "defaultMessage": "You have no exports to download"
+  },
+  "exports.size": {
+    "defaultMessage": "Veličina"
+  },
+  "exports.status": {
+    "defaultMessage": "Status"
+  },
+  "exports.title": {
+    "defaultMessage": "Exports ready for download"
+  },
+  "facet.addresses": {
+    "defaultMessage": "{count, plural, one {Address} other {Addresses}}"
+  },
+  "facet.caption": {
+    "defaultMessage": "Ime"
+  },
+  "facet.category": {
+    "defaultMessage": "{count, plural, one {Category} other {Categories}}"
+  },
+  "facet.collection_id": {
+    "defaultMessage": "Dataset"
+  },
+  "facet.countries": {
+    "defaultMessage": "{count, plural, one {Country} other {Countries}}"
+  },
+  "facet.dates": {
+    "defaultMessage": "{count, plural, one {Date} other {Dates}}"
+  },
+  "facet.emails": {
+    "defaultMessage": "{count, plural, one {Email address} other {Email addresses}}"
+  },
+  "facet.ibans": {
+    "defaultMessage": "{count, plural, one {IBAN} other {IBANs}}"
+  },
+  "facet.languages": {
+    "defaultMessage": "{count, plural, one {Language} other {Languages}}"
+  },
+  "facet.mimetypes": {
+    "defaultMessage": "{count, plural, one {File type} other {File types}}"
+  },
+  "facet.names": {
+    "defaultMessage": "{count, plural, one {Name} other {Names}}"
+  },
+  "facet.phones": {
+    "defaultMessage": "{count, plural, one {Phone number} other {Phone numbers}}"
+  },
+  "facet.schema": {
+    "defaultMessage": "Entity type"
+  },
+  "file_import.error": {
+    "defaultMessage": "Error importing file"
+  },
+  "footer.aleph": {
+    "defaultMessage": "Aleph {version}"
+  },
+  "footer.ftm": {
+    "defaultMessage": "FollowTheMoney {version}"
+  },
+  "group.page.description": {
+    "defaultMessage": "The list below shows all datasets and investigations that belong to this group."
+  },
+  "group.page.search.description": {
+    "defaultMessage": "If you would like to search for specific entities or documents within the datasets that this group has access to, <link>click here</link> instead."
+  },
+  "grouping.label": {
+    "defaultMessage": "Group"
+  },
+  "hint_popover.dismiss": {
+    "defaultMessage": "Don’t show this again"
+  },
+  "home.access_disabled": {
+    "defaultMessage": "Public access temporarily disabled"
+  },
+  "home.counts.countries": {
+    "defaultMessage": "Countries & territories"
+  },
+  "home.counts.datasets": {
+    "defaultMessage": "Public datasets"
+  },
+  "home.counts.entities": {
+    "defaultMessage": "Public entities"
+  },
+  "home.placeholder": {
+    "defaultMessage": "Pokušajte pretražiti: {samples}"
+  },
+  "home.statistics.categories": {
+    "defaultMessage": "Dataset categories"
+  },
+  "home.statistics.countries": {
+    "defaultMessage": "Countries and territories"
+  },
+  "home.statistics.schemata": {
+    "defaultMessage": "Entity types"
+  },
+  "home.stats.title": {
+    "defaultMessage": "Get started exploring public data"
+  },
+  "home.title": {
+    "defaultMessage": "Find public records and leaks"
+  },
+  "hotkeys.judgement.different": {
+    "defaultMessage": "Decide different"
+  },
+  "hotkeys.judgement.group_label": {
+    "defaultMessage": "Entity decisions"
+  },
+  "hotkeys.judgement.next": {
+    "defaultMessage": "Select next result"
+  },
+  "hotkeys.judgement.previous": {
+    "defaultMessage": "Select previous result"
+  },
+  "hotkeys.judgement.same": {
+    "defaultMessage": "Decide same"
+  },
+  "hotkeys.judgement.unsure": {
+    "defaultMessage": "Decide not enough information"
+  },
+  "hotkeys.search.different": {
+    "defaultMessage": "Preview previous result"
+  },
+  "hotkeys.search.group_label": {
+    "defaultMessage": "Search preview"
+  },
+  "hotkeys.search.unsure": {
+    "defaultMessage": "Preview next result"
+  },
+  "hotkeys.search_focus": {
+    "defaultMessage": "Pretraži"
+  },
+  "infoMode.collection_casefile": {
+    "defaultMessage": "Investigation"
+  },
+  "infoMode.collection_dataset": {
+    "defaultMessage": "Dataset"
+  },
+  "infoMode.createdAt": {
+    "defaultMessage": "Created at"
+  },
+  "infoMode.creator": {
+    "defaultMessage": "Created by"
+  },
+  "infoMode.updatedAt": {
+    "defaultMessage": "Posljednja izmjena"
+  },
+  "investigation.mentions.empty": {
+    "defaultMessage": "There are no mentions yet in this investigation."
+  },
+  "investigation.overview.guides": {
+    "defaultMessage": "Read more"
+  },
+  "investigation.overview.guides.access": {
+    "defaultMessage": "Managing access"
+  },
+  "investigation.overview.guides.diagrams": {
+    "defaultMessage": "Drawing network diagrams"
+  },
+  "investigation.overview.guides.documents": {
+    "defaultMessage": "Uploading documents"
+  },
+  "investigation.overview.guides.entities": {
+    "defaultMessage": "Creating & editing entities"
+  },
+  "investigation.overview.guides.mappings": {
+    "defaultMessage": "Generating entities from a spreadsheet"
+  },
+  "investigation.overview.notifications": {
+    "defaultMessage": "Recent activity"
+  },
+  "investigation.overview.shortcuts": {
+    "defaultMessage": "Quick links"
+  },
+  "investigation.overview.shortcuts_empty": {
+    "defaultMessage": "Getting started"
+  },
+  "investigation.search.placeholder": {
+    "defaultMessage": "Search this investigation"
+  },
+  "investigation.shortcut.diagram": {
+    "defaultMessage": "Sketch a network diagram"
+  },
+  "investigation.shortcut.entities": {
+    "defaultMessage": "Create new entities"
+  },
+  "investigation.shortcut.entity_create_error": {
+    "defaultMessage": "Unable to create entity"
+  },
+  "investigation.shortcut.entity_create_success": {
+    "defaultMessage": "Successfully created {name}"
+  },
+  "investigation.shortcut.upload": {
+    "defaultMessage": "Unos dokumenata"
+  },
+  "investigation.shortcut.xref": {
+    "defaultMessage": "Compare with other datasets"
+  },
+  "judgement.disabled": {
+    "defaultMessage": "You must have edit access in order to make judgements."
+  },
+  "judgement.negative": {
+    "defaultMessage": "Different"
+  },
+  "judgement.positive": {
+    "defaultMessage": "Same"
+  },
+  "judgement.unsure": {
+    "defaultMessage": "Not enough information"
+  },
+  "landing.shortcut.alert": {
+    "defaultMessage": "Create a search alert"
+  },
+  "landing.shortcut.datasets": {
+    "defaultMessage": "Browse datasets"
+  },
+  "landing.shortcut.investigation": {
+    "defaultMessage": "Start an investigation"
+  },
+  "landing.shortcut.search": {
+    "defaultMessage": "Search entities"
+  },
+  "list.create.button": {
+    "defaultMessage": "New list"
+  },
+  "list.create.label_placeholder": {
+    "defaultMessage": "Untitled list"
+  },
+  "list.create.login": {
+    "defaultMessage": "You must log in to create a list"
+  },
+  "list.create.success": {
+    "defaultMessage": "Your list has been created successfully."
+  },
+  "list.create.summary_placeholder": {
+    "defaultMessage": "A brief description of the list"
+  },
+  "list.create.title": {
+    "defaultMessage": "Create a list"
+  },
+  "list.selector.create": {
+    "defaultMessage": "Create a new list"
+  },
+  "list.selector.select_empty": {
+    "defaultMessage": "No existing list"
+  },
+  "list.update.label_placeholder": {
+    "defaultMessage": "Untitled list"
+  },
+  "list.update.success": {
+    "defaultMessage": "Your list has been updated successfully."
+  },
+  "list.update.summary_placeholder": {
+    "defaultMessage": "A brief description of the list"
+  },
+  "list.update.title": {
+    "defaultMessage": "List settings"
+  },
+  "lists": {
+    "defaultMessage": "Lists"
+  },
+  "lists.description": {
+    "defaultMessage": "Lists let you organize and group related entities of interest."
+  },
+  "lists.no_lists": {
+    "defaultMessage": "There are no lists."
+  },
+  "lists.title": {
+    "defaultMessage": "Lists"
+  },
+  "login.oauth": {
+    "defaultMessage": "Loguj se pomoću OAuth"
+  },
+  "mapping.actions.create": {
+    "defaultMessage": "Generate entities"
+  },
+  "mapping.actions.create.toast": {
+    "defaultMessage": "Generating entities..."
+  },
+  "mapping.actions.delete": {
+    "defaultMessage": "Izbriši"
+  },
+  "mapping.actions.delete.toast": {
+    "defaultMessage": "Deleting mapping and any generated entities..."
+  },
+  "mapping.actions.export": {
+    "defaultMessage": "Export mapping"
+  },
+  "mapping.actions.flush": {
+    "defaultMessage": "Remove generated entities"
+  },
+  "mapping.actions.flush.toast": {
+    "defaultMessage": "Removing generated entities..."
+  },
+  "mapping.actions.save": {
+    "defaultMessage": "Sačuvaj izmjene"
+  },
+  "mapping.actions.save.toast": {
+    "defaultMessage": "Re-generating entities..."
+  },
+  "mapping.create.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "mapping.create.confirm": {
+    "defaultMessage": "Generate"
+  },
+  "mapping.create.question": {
+    "defaultMessage": "Are you sure you are ready to generate entities using this mapping?"
+  },
+  "mapping.delete.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "mapping.delete.confirm": {
+    "defaultMessage": "Izbriši"
+  },
+  "mapping.delete.question": {
+    "defaultMessage": "Are you sure you want to delete this mapping and all generated entities?"
+  },
+  "mapping.docs.link": {
+    "defaultMessage": "Aleph user guide"
+  },
+  "mapping.entityAssign.helpText": {
+    "defaultMessage": "You must create an object of type \"{range}\" to be the {property}"
+  },
+  "mapping.entityAssign.noResults": {
+    "defaultMessage": "No matching objects available"
+  },
+  "mapping.entityAssign.placeholder": {
+    "defaultMessage": "Select an object"
+  },
+  "mapping.entity_set_select": {
+    "defaultMessage": "Select a List or Diagram"
+  },
+  "mapping.entityset.remove": {
+    "defaultMessage": "Ukloni"
+  },
+  "mapping.error.keyMissing": {
+    "defaultMessage": "Key Error: {id} entity must have at least one key"
+  },
+  "mapping.error.relationshipMissing": {
+    "defaultMessage": "Relationship Error: {id} entity must have a {source} and {target} assigned"
+  },
+  "mapping.flush.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "mapping.flush.confirm": {
+    "defaultMessage": "Ukloni"
+  },
+  "mapping.flush.question": {
+    "defaultMessage": "Are you sure you want to remove entities generated using this mapping?"
+  },
+  "mapping.import.button": {
+    "defaultMessage": "Import existing mapping"
+  },
+  "mapping.import.placeholder": {
+    "defaultMessage": "Drop a .yml file here or click to import an existing mapping file"
+  },
+  "mapping.import.querySelect": {
+    "defaultMessage": "Select a mapping query from this file to import:"
+  },
+  "mapping.import.submit": {
+    "defaultMessage": "Submit"
+  },
+  "mapping.import.success": {
+    "defaultMessage": "Your mapping has been imported successfully."
+  },
+  "mapping.import.title": {
+    "defaultMessage": "Import a mapping"
+  },
+  "mapping.info": {
+    "defaultMessage": "Follow the steps below to map items in this investigation to structured entites. For more information, please refer to the {link}."
+  },
+  "mapping.info.link": {
+    "defaultMessage": "Aleph user guide"
+  },
+  "mapping.keyAssign.additionalHelpText": {
+    "defaultMessage": "The best keys are columns from your data that contain id numbers, phone numbers, email addresses, or other uniquely identifying information. If no columns with unique values exist, select multiple columns to allow Aleph to generate unique entities correctly from your data."
+  },
+  "mapping.keyAssign.additionalHelpToggle.less": {
+    "defaultMessage": "Less"
+  },
+  "mapping.keyAssign.additionalHelpToggle.more": {
+    "defaultMessage": "More about keys"
+  },
+  "mapping.keyAssign.helpText": {
+    "defaultMessage": "Specify which columns from the source data will be used to identify unique entities."
+  },
+  "mapping.keyAssign.noResults": {
+    "defaultMessage": "No results"
+  },
+  "mapping.keyAssign.placeholder": {
+    "defaultMessage": "Select keys from available columns"
+  },
+  "mapping.keys": {
+    "defaultMessage": "Keys"
+  },
+  "mapping.propAssign.errorBlank": {
+    "defaultMessage": "Columns with no header cannot be assigned"
+  },
+  "mapping.propAssign.errorDuplicate": {
+    "defaultMessage": "Columns with duplicate headers cannot be assigned"
+  },
+  "mapping.propAssign.literalButtonText": {
+    "defaultMessage": "Add a fixed value"
+  },
+  "mapping.propAssign.literalPlaceholder": {
+    "defaultMessage": "Add fixed value text"
+  },
+  "mapping.propAssign.other": {
+    "defaultMessage": "Drugo"
+  },
+  "mapping.propAssign.placeholder": {
+    "defaultMessage": "Assign a property"
+  },
+  "mapping.propRemove": {
+    "defaultMessage": "Remove this property from mapping"
+  },
+  "mapping.props": {
+    "defaultMessage": "Properties"
+  },
+  "mapping.save.cancel": {
+    "defaultMessage": "Otkaži"
+  },
+  "mapping.save.confirm": {
+    "defaultMessage": "Update mapping & re-generate"
+  },
+  "mapping.save.question": {
+    "defaultMessage": "Updating this mapping will delete any previously generated entities and re-generate them. Are you sure you would like to continue?"
+  },
+  "mapping.section1.title": {
+    "defaultMessage": "1. Select entity types to generate"
+  },
+  "mapping.section2.title": {
+    "defaultMessage": "2. Map columns to entity properties"
+  },
+  "mapping.section3.title": {
+    "defaultMessage": "3. Verify"
+  },
+  "mapping.section4.description": {
+    "defaultMessage": "Generated entities will be added to {collection} by default. If you would like to additionally add them to a list or diagram within the investigation, please click below and select from the available options."
+  },
+  "mapping.section4.title": {
+    "defaultMessage": "4. Select a destination for generated entities (optional)"
+  },
+  "mapping.status.error": {
+    "defaultMessage": "Error:"
+  },
+  "mapping.status.status": {
+    "defaultMessage": "Status:"
+  },
+  "mapping.status.updated": {
+    "defaultMessage": "Last updated:"
+  },
+  "mapping.title": {
+    "defaultMessage": "Generate structured entities"
+  },
+  "mapping.types.objects": {
+    "defaultMessage": "Objects"
+  },
+  "mapping.types.relationships": {
+    "defaultMessage": "Veze"
+  },
+  "mapping.warning.empty": {
+    "defaultMessage": "You must create at least one entity"
+  },
+  "mappings.no_mappings": {
+    "defaultMessage": "You have not generated any mappings yet"
+  },
+  "messages.banner.dismiss": {
+    "defaultMessage": "Dismiss"
+  },
+  "nav.alerts": {
+    "defaultMessage": "Pretplata"
+  },
+  "nav.bookmarks": {
+    "defaultMessage": "Bookmarks"
+  },
+  "nav.cases": {
+    "defaultMessage": "Investigations"
+  },
+  "nav.collections": {
+    "defaultMessage": "Datasets"
+  },
+  "nav.diagrams": {
+    "defaultMessage": "Network diagrams"
+  },
+  "nav.exports": {
+    "defaultMessage": "Exports"
+  },
+  "nav.lists": {
+    "defaultMessage": "Lists"
+  },
+  "nav.menu.cases": {
+    "defaultMessage": "Investigations"
+  },
+  "nav.settings": {
+    "defaultMessage": "Podešavanja"
+  },
+  "nav.signin": {
+    "defaultMessage": "Prijava"
+  },
+  "nav.signout": {
+    "defaultMessage": "Odloguj se"
+  },
+  "nav.status": {
+    "defaultMessage": "System status"
+  },
+  "nav.timelines": {
+    "defaultMessage": "Timelines"
+  },
+  "nav.view_notifications": {
+    "defaultMessage": "Notifikacije"
+  },
+  "navbar.alert_add": {
+    "defaultMessage": "Click to receive alerts about new results for this search."
+  },
+  "navbar.alert_remove": {
+    "defaultMessage": "Dobijate notifikacije u vezi ove pretrage."
+  },
+  "notification.description": {
+    "defaultMessage": "View the latest updates to datasets, investigations, groups and tracking alerts you follow."
+  },
+  "notifications.greeting": {
+    "defaultMessage": "What's new, {role}?"
+  },
+  "notifications.no_notifications": {
+    "defaultMessage": "You have no unseen notifications"
+  },
+  "notifications.title": {
+    "defaultMessage": "Nedavne notifikacije"
+  },
+  "notifications.type_filter.all": {
+    "defaultMessage": "All"
+  },
+  "oauth.role_blocked.dialog.title": {
+    "defaultMessage": "User account deactivated"
+  },
+  "pages.not.found": {
+    "defaultMessage": "Stranica nije pronađena"
+  },
+  "pass.auth.not_same": {
+    "defaultMessage": "Vaše šifre nisu iste!"
+  },
+  "password_auth.activate": {
+    "defaultMessage": "Aktiviraj"
+  },
+  "password_auth.confirm": {
+    "defaultMessage": "Potvrdi šifru"
+  },
+  "password_auth.email": {
+    "defaultMessage": "E-mail adresa"
+  },
+  "password_auth.name": {
+    "defaultMessage": "Vaše ime"
+  },
+  "password_auth.password": {
+    "defaultMessage": "Šifra"
+  },
+  "password_auth.signin": {
+    "defaultMessage": "Prijava"
+  },
+  "password_auth.signup": {
+    "defaultMessage": "Registracija"
+  },
+  "profile.callout.details": {
+    "defaultMessage": "This profile aggregates attributes and relationships from {count} entities across different datasets."
+  },
+  "profile.callout.intro": {
+    "defaultMessage": "You're viewing {entity} as a profile."
+  },
+  "profile.callout.link": {
+    "defaultMessage": "View the <link>original entity</link>"
+  },
+  "profile.delete.warning": {
+    "defaultMessage": "Deleting this profile will not delete any of the entities or entity decisions contained within it."
+  },
+  "profile.hint": {
+    "defaultMessage": "{entity} has been combined with entities from other datasets <link>into a profile</link>"
+  },
+  "profile.info.header": {
+    "defaultMessage": "Profil"
+  },
+  "profile.info.items": {
+    "defaultMessage": "Entity decisions"
+  },
+  "profile.info.similar": {
+    "defaultMessage": "Suggested"
+  },
+  "profile.items.entity": {
+    "defaultMessage": "Combined entities"
+  },
+  "profile.items.explanation": {
+    "defaultMessage": "Make decisions below to determine which source entities should be added or excluded from this profile."
+  },
+  "profile.similar.no_results": {
+    "defaultMessage": "No suggested additions for this profile were found."
+  },
+  "property.inverse": {
+    "defaultMessage": "'{label}' of …"
+  },
+  "property.values.truncate_hide": {
+    "defaultMessage": "- Show fewer"
+  },
+  "property.values.truncate_show": {
+    "defaultMessage": "+{truncateCount} More"
+  },
+  "queryFilters.clearAll": {
+    "defaultMessage": "Clear all"
+  },
+  "queryFilters.showHidden": {
+    "defaultMessage": "Show {count} more filters..."
+  },
+  "refresh.callout_message": {
+    "defaultMessage": "Dokumenti se upravo precesuiraju. Molimo sačekajte..."
+  },
+  "restricted.explain": {
+    "defaultMessage": "Use of this dataset is restricted. Read the description and contact {creator} before using this material."
+  },
+  "restricted.explain.creator": {
+    "defaultMessage": "the dataset owner"
+  },
+  "restricted.tag": {
+    "defaultMessage": "RESTRICTED"
+  },
+  "result.error": {
+    "defaultMessage": "Greška"
+  },
+  "result.more_results": {
+    "defaultMessage": "More than {total} results"
+  },
+  "result.none": {
+    "defaultMessage": "No results found"
+  },
+  "result.results": {
+    "defaultMessage": "Found {total} results"
+  },
+  "result.searching": {
+    "defaultMessage": "Traženje..."
+  },
+  "result.solo": {
+    "defaultMessage": "One result found"
+  },
+  "role.select.placeholder": {
+    "defaultMessage": "Enter email address…"
+  },
+  "role.select.user": {
+    "defaultMessage": "Izaberi korisnika"
+  },
+  "router.error.message": {
+    "defaultMessage": "Sorry, something went wrong and Aleph couldn’t load. Please try again in a few minutes or contact an administrator if the error persists."
+  },
+  "router.error.retry": {
+    "defaultMessage": "Retry"
+  },
+  "schemaSelect.button.relationship": {
+    "defaultMessage": "Add a new relationship"
+  },
+  "schemaSelect.button.thing": {
+    "defaultMessage": "Add a new object"
+  },
+  "screen.load_more": {
+    "defaultMessage": "Load more"
+  },
+  "search.advanced.all.helptext": {
+    "defaultMessage": "Only results containing all of the given terms will be returned"
+  },
+  "search.advanced.all.label": {
+    "defaultMessage": "All of these words (Default)"
+  },
+  "search.advanced.any.helptext": {
+    "defaultMessage": "Results containing any of the given terms will be returned"
+  },
+  "search.advanced.any.label": {
+    "defaultMessage": "Any of these words"
+  },
+  "search.advanced.clear": {
+    "defaultMessage": "Clear all"
+  },
+  "search.advanced.exact.helptext": {
+    "defaultMessage": "Only results with this exact word or phrase will be returned"
+  },
+  "search.advanced.exact.label": {
+    "defaultMessage": "This exact word/phrase"
+  },
+  "search.advanced.none.helptext": {
+    "defaultMessage": "Exclude results with these words"
+  },
+  "search.advanced.none.label": {
+    "defaultMessage": "None of these words"
+  },
+  "search.advanced.proximity.distance": {
+    "defaultMessage": "Distance"
+  },
+  "search.advanced.proximity.helptext": {
+    "defaultMessage": "Search for two terms within a certain distance of each other. For example, return results with the terms \"Bank\" and \"America\" occurring within two words from each other, such as \"Bank of America\", \"Bank in America\", even \"America has a Bank\"."
+  },
+  "search.advanced.proximity.label": {
+    "defaultMessage": "Terms in proximity to each other"
+  },
+  "search.advanced.proximity.term": {
+    "defaultMessage": "First term"
+  },
+  "search.advanced.proximity.term2": {
+    "defaultMessage": "Second term"
+  },
+  "search.advanced.submit": {
+    "defaultMessage": "Pretraži"
+  },
+  "search.advanced.title": {
+    "defaultMessage": "Advanced Search"
+  },
+  "search.advanced.variants.distance": {
+    "defaultMessage": "Letters different"
+  },
+  "search.advanced.variants.helptext": {
+    "defaultMessage": "Increase the fuzziness of a search. For example, Wladimir~2 will return not just the term “Wladimir” but also similar spellings such as \"Wladimyr\" or \"Vladimyr\". A spelling variant is defined by the number of spelling mistakes that must be made to get from the original word to the variant."
+  },
+  "search.advanced.variants.label": {
+    "defaultMessage": "Spelling variations"
+  },
+  "search.advanced.variants.term": {
+    "defaultMessage": "Term"
+  },
+  "search.callout_message": {
+    "defaultMessage": "Some sources are hidden from anonymous users. {signInButton} to see all results you are authorised to access."
+  },
+  "search.callout_message.button_text": {
+    "defaultMessage": "Prijava"
+  },
+  "search.columns.configure": {
+    "defaultMessage": "Configure columns"
+  },
+  "search.columns.configure_placeholder": {
+    "defaultMessage": "Search for a column..."
+  },
+  "search.config.groups": {
+    "defaultMessage": "Property groups"
+  },
+  "search.config.properties": {
+    "defaultMessage": "Properties"
+  },
+  "search.config.reset": {
+    "defaultMessage": "Reset to default"
+  },
+  "search.facets.clearDates": {
+    "defaultMessage": "Clear"
+  },
+  "search.facets.configure": {
+    "defaultMessage": "Configure filters"
+  },
+  "search.facets.configure_placeholder": {
+    "defaultMessage": "Search for a filter..."
+  },
+  "search.facets.filtersSelected": {
+    "defaultMessage": "{count} odabrano"
+  },
+  "search.facets.hide": {
+    "defaultMessage": "Hide filters"
+  },
+  "search.facets.no_items": {
+    "defaultMessage": "Nema opcija"
+  },
+  "search.facets.show": {
+    "defaultMessage": "Show filters"
+  },
+  "search.facets.showMore": {
+    "defaultMessage": "Prikaži više..."
+  },
+  "search.filterTag.ancestors": {
+    "defaultMessage": "unutar:"
+  },
+  "search.filterTag.exclude": {
+    "defaultMessage": "osim:"
+  },
+  "search.filterTag.role": {
+    "defaultMessage": "Filter by access"
+  },
+  "search.loading": {
+    "defaultMessage": "Loading..."
+  },
+  "search.no_results_description": {
+    "defaultMessage": "Pokušajte opširniji pojam za pretragu"
+  },
+  "search.no_results_title": {
+    "defaultMessage": "Nema rezultata pretrage"
+  },
+  "search.placeholder": {
+    "defaultMessage": "Search companies, people and documents"
+  },
+  "search.placeholder_default": {
+    "defaultMessage": "Pretraži..."
+  },
+  "search.placeholder_label": {
+    "defaultMessage": "Search in {label}"
+  },
+  "search.results_text.multiple": {
+    "defaultMessage": "Found {count} results"
+  },
+  "search.results_text.none": {
+    "defaultMessage": "No results found"
+  },
+  "search.results_text.one": {
+    "defaultMessage": "Found 1 result"
+  },
+  "search.screen.dates.show-all": {
+    "defaultMessage": "* Showing all date filter options. { button } to view recent dates only."
+  },
+  "search.screen.dates.show-hidden": {
+    "defaultMessage": "* Showing only date filter options from {start} to the present. { button } to view dates outside this range."
+  },
+  "search.screen.dates.show-hidden.click": {
+    "defaultMessage": "Click here"
+  },
+  "search.screen.dates_label": {
+    "defaultMessage": "rezultata"
+  },
+  "search.screen.dates_title": {
+    "defaultMessage": "Dates"
+  },
+  "search.screen.dates_uncertain_day": {
+    "defaultMessage": "* this count includes dates where no day is specified"
+  },
+  "search.screen.dates_uncertain_day_month": {
+    "defaultMessage": "* this count includes dates in {year} where no day or month is specified"
+  },
+  "search.screen.dates_uncertain_month": {
+    "defaultMessage": "* this count includes dates in {year} where no month is specified"
+  },
+  "search.screen.export": {
+    "defaultMessage": "Export"
+  },
+  "search.screen.export_disabled": {
+    "defaultMessage": "Cannot export more than 10,000 results at a time"
+  },
+  "search.screen.export_disabled_empty": {
+    "defaultMessage": "No results to export."
+  },
+  "search.screen.export_helptext": {
+    "defaultMessage": "Export results"
+  },
+  "search.title": {
+    "defaultMessage": "Search: {title}"
+  },
+  "search.title_emptyq": {
+    "defaultMessage": "Pretraži"
+  },
+  "settings.api_key.confirm_regenerate": {
+    "defaultMessage": "You are about to regenerate your API key. When you regenerate your API key, your old key will stop working. If you are currently using your API key in applications or scripts, you will need to update them to keep them working."
+  },
+  "settings.api_key.generate": {
+    "defaultMessage": "Generate API key"
+  },
+  "settings.api_key.regenerate": {
+    "defaultMessage": "Regenerate API key"
+  },
+  "settings.api_key.success": {
+    "defaultMessage": "Your new API key has been generated and is valid for {days, number} days. Be sure to copy it below as you won’t be able to view it again later. We recommend storing your API key in a password manager. Do not share your API key with anyone else."
+  },
+  "settings.api_key.text_expiration": {
+    "defaultMessage": "Your API key will expire on {date}, {time}."
+  },
+  "settings.api_key.text_expired": {
+    "defaultMessage": "Your API key expired on {date}, {time}."
+  },
+  "settings.api_key.text_generate": {
+    "defaultMessage": "You need an API key in order to access the Aleph API. Generate an API key to get started."
+  },
+  "settings.api_key.text_regenerate": {
+    "defaultMessage": "When you regenerate your API key, your old key will stop working."
+  },
+  "settings.api_key.text_regenerate_expired": {
+    "defaultMessage": "Regenerate your API key in order to access the Aleph API."
+  },
+  "settings.api_key.title": {
+    "defaultMessage": "API key"
+  },
+  "settings.current_explain": {
+    "defaultMessage": "Enter your current password to set a new one"
+  },
+  "settings.current_password": {
+    "defaultMessage": "Current password"
+  },
+  "settings.email": {
+    "defaultMessage": "E-mail adresa"
+  },
+  "settings.email.muted": {
+    "defaultMessage": "Receive daily notification emails"
+  },
+  "settings.email_no_change": {
+    "defaultMessage": "Your email address cannot be changed"
+  },
+  "settings.locale": {
+    "defaultMessage": "Jezik"
+  },
+  "settings.locale.success": {
+    "defaultMessage": "Your language preference has been updated."
+  },
+  "settings.name": {
+    "defaultMessage": "Ime"
+  },
+  "settings.new_password": {
+    "defaultMessage": "New password"
+  },
+  "settings.notifications.success": {
+    "defaultMessage": "Your notification preferences have been updated."
+  },
+  "settings.notifications.text": {
+    "defaultMessage": "Aleph can send you email notification when something happens in an investigation or dataset you have access to, for example when someone else uploads a new file."
+  },
+  "settings.notifications.title": {
+    "defaultMessage": "Notifikacije"
+  },
+  "settings.password.change": {
+    "defaultMessage": "Change password"
+  },
+  "settings.password.success": {
+    "defaultMessage": "Your password has been updated."
+  },
+  "settings.password.title": {
+    "defaultMessage": "Change your password"
+  },
+  "settings.password_confirmation": {
+    "defaultMessage": "Confirm new password"
+  },
+  "settings.password_rules": {
+    "defaultMessage": "Koristi najmaje šest karaktera"
+  },
+  "settings.passwords.missmatch": {
+    "defaultMessage": "Šifre nisu iste"
+  },
+  "settings.profile.title": {
+    "defaultMessage": "Profil"
+  },
+  "settings.save": {
+    "defaultMessage": "Sačuvaj"
+  },
+  "settings.saved": {
+    "defaultMessage": "It’s official, your profile is updated."
+  },
+  "settings.title": {
+    "defaultMessage": "Podešavanja"
+  },
+  "sidebar.default.multiple": {
+    "defaultMessage": "{count} entities"
+  },
+  "sidebar.edit.hide": {
+    "defaultMessage": "Hide"
+  },
+  "sidebar.edit.show": {
+    "defaultMessage": "Edit all"
+  },
+  "sidebar.open": {
+    "defaultMessage": "Expand"
+  },
+  "sidebar.selected.multiple": {
+    "defaultMessage": "{count} odabrano"
+  },
+  "signup.activate": {
+    "defaultMessage": "Aktiviraj svoj profil"
+  },
+  "signup.inbox.desc": {
+    "defaultMessage": "Poslali smo Vam e-mail, molimo da pomoću linka završite svoju registraciju"
+  },
+  "signup.inbox.title": {
+    "defaultMessage": "Provjeri svoju poštu"
+  },
+  "signup.login": {
+    "defaultMessage": "Već imate kreiran profil? Logujte se!"
+  },
+  "signup.register": {
+    "defaultMessage": "Registrujte se"
+  },
+  "signup.register.question": {
+    "defaultMessage": "Nemate kreiran profil? Registrujte se!"
+  },
+  "signup.title": {
+    "defaultMessage": "Prijava"
+  },
+  "sorting.bar.button.label": {
+    "defaultMessage": "Show:"
+  },
+  "sorting.bar.caption": {
+    "defaultMessage": "Title"
+  },
+  "sorting.bar.collection_id": {
+    "defaultMessage": "Dataset"
+  },
+  "sorting.bar.count": {
+    "defaultMessage": "Veličina"
+  },
+  "sorting.bar.countries": {
+    "defaultMessage": "Države"
+  },
+  "sorting.bar.created_at": {
+    "defaultMessage": "Creation Date"
+  },
+  "sorting.bar.date": {
+    "defaultMessage": "Datum"
+  },
+  "sorting.bar.dates": {
+    "defaultMessage": "Dates"
+  },
+  "sorting.bar.direction": {
+    "defaultMessage": "Direction:"
+  },
+  "sorting.bar.endDate": {
+    "defaultMessage": "End date"
+  },
+  "sorting.bar.label": {
+    "defaultMessage": "Title"
+  },
+  "sorting.bar.sort": {
+    "defaultMessage": "Sort by:"
+  },
+  "sorting.bar.updated_at": {
+    "defaultMessage": "Update Date"
+  },
+  "sources.index.empty": {
+    "defaultMessage": "This group is not linked to any datasets or investigations."
+  },
+  "sources.index.placeholder": {
+    "defaultMessage": "Search for a dataset or investigation belonging to {group}..."
+  },
+  "ssettings.locale.text": {
+    "defaultMessage": "Change the language of the Aleph user interface."
+  },
+  "status.last_updated_at": {
+    "defaultMessage": "last updated"
+  },
+  "status.no_collection": {
+    "defaultMessage": "Other tasks"
+  },
+  "status.started_at": {
+    "defaultMessage": "started"
+  },
+  "table_editor.add_row": {
+    "defaultMessage": "Add a new {schema} row"
+  },
+  "table_editor.add_schema": {
+    "defaultMessage": "Add an entity type"
+  },
+  "table_editor.remove_row": {
+    "defaultMessage": "Remove new {schema} row"
+  },
+  "tags.results": {
+    "defaultMessage": "Mention count"
+  },
+  "tags.title": {
+    "defaultMessage": "Term"
+  },
+  "text.loading": {
+    "defaultMessage": "Učitavanje..."
+  },
+  "timeline.actions.add_item": {
+    "defaultMessage": "Add item"
+  },
+  "timeline.actions.renderer.label": {
+    "defaultMessage": "Change view"
+  },
+  "timeline.create.button": {
+    "defaultMessage": "New timeline"
+  },
+  "timeline.create.label_placeholder": {
+    "defaultMessage": "Untitled timeline"
+  },
+  "timeline.create.login": {
+    "defaultMessage": "You must log in to create a timeline"
+  },
+  "timeline.create.success": {
+    "defaultMessage": "Your timeline has been created successfully."
+  },
+  "timeline.create.summary_placeholder": {
+    "defaultMessage": "A brief description of the timeline"
+  },
+  "timeline.create.title": {
+    "defaultMessage": "Create a timeline"
+  },
+  "timeline.create_entitity.title": {
+    "defaultMessage": "Add new item to timeline"
+  },
+  "timeline.create_entity.submit": {
+    "defaultMessage": "Dodaj"
+  },
+  "timeline.empty_state.message": {
+    "defaultMessage": "Add an item to get started."
+  },
+  "timeline.empty_state.title": {
+    "defaultMessage": "This timeline is still empty"
+  },
+  "timeline.invalid_dates_warning": {
+    "defaultMessage": "This timeline has items with invalid or missing dates. Check the list below and add dates or remove items."
+  },
+  "timeline.item.invalid_date": {
+    "defaultMessage": "Invalid or no date"
+  },
+  "timeline.item.remove.long": {
+    "defaultMessage": "Remove from timeline"
+  },
+  "timeline.item.remove.short": {
+    "defaultMessage": "Ukloni"
+  },
+  "timeline.item_create_form.optional": {
+    "defaultMessage": "(optional)"
+  },
+  "timeline.list.actions": {
+    "defaultMessage": "Actions"
+  },
+  "timeline.list.caption": {
+    "defaultMessage": "Caption"
+  },
+  "timeline.list.date": {
+    "defaultMessage": "Datum"
+  },
+  "timeline.list.end_date": {
+    "defaultMessage": "End date"
+  },
+  "timeline.list.start_date": {
+    "defaultMessage": "Start date"
+  },
+  "timeline.renderer.chart": {
+    "defaultMessage": "Chart"
+  },
+  "timeline.renderer.list": {
+    "defaultMessage": "List"
+  },
+  "timeline.selector.create": {
+    "defaultMessage": "Create a new timeline"
+  },
+  "timeline.selector.select_empty": {
+    "defaultMessage": "No existing timeline"
+  },
+  "timeline.update.label_placeholder": {
+    "defaultMessage": "Untitled timeline"
+  },
+  "timeline.update.success": {
+    "defaultMessage": "Your timeline has been updated successfully."
+  },
+  "timeline.update.summary_placeholder": {
+    "defaultMessage": "A brief description of the timeline"
+  },
+  "timeline.update.title": {
+    "defaultMessage": "Timeline settings"
+  },
+  "timeline.zoom_levels.days": {
+    "defaultMessage": "Days"
+  },
+  "timeline.zoom_levels.months": {
+    "defaultMessage": "Months"
+  },
+  "timeline.zoom_levels.unavailable": {
+    "defaultMessage": "The “{label}” view is not available because this timeline covers a period of {maxYears} years or more."
+  },
+  "timeline.zoom_levels.years": {
+    "defaultMessage": "Years"
+  },
+  "timelines": {
+    "defaultMessage": "Timelines"
+  },
+  "timelines.description": {
+    "defaultMessage": "Timelines are a way to view and organize events chronologically."
+  },
+  "timelines.no_timelines": {
+    "defaultMessage": "There are no timelines."
+  },
+  "timelines.title": {
+    "defaultMessage": "Timelines"
+  },
+  "toasts.expand_none": {
+    "defaultMessage": "All expansion results are already present in the diagram"
+  },
+  "toasts.expand_success": {
+    "defaultMessage": "Successfully added {vertices} new {vertices, plural, one {node} other {nodes}} and {edges} new {edges, plural, one {link} other {links}} to the diagram"
+  },
+  "tooltip.add_edges": {
+    "defaultMessage": "Add link"
+  },
+  "tooltip.add_entities": {
+    "defaultMessage": "Add entities"
+  },
+  "tooltip.delete": {
+    "defaultMessage": "Izbriši selektovano"
+  },
+  "tooltip.expand": {
+    "defaultMessage": "Discover links"
+  },
+  "tooltip.export_svg": {
+    "defaultMessage": "Export as SVG"
+  },
+  "tooltip.group": {
+    "defaultMessage": "Group selected"
+  },
+  "tooltip.layout_auto": {
+    "defaultMessage": "Auto-layout"
+  },
+  "tooltip.layout_center": {
+    "defaultMessage": "Center"
+  },
+  "tooltip.layout_circle": {
+    "defaultMessage": "Arrange as circle"
+  },
+  "tooltip.layout_hierarchy": {
+    "defaultMessage": "Arrange as hierarchy"
+  },
+  "tooltip.layout_horizontal": {
+    "defaultMessage": "Align horizontal"
+  },
+  "tooltip.layout_vertical": {
+    "defaultMessage": "Align vertical"
+  },
+  "tooltip.layouts": {
+    "defaultMessage": "Layouts"
+  },
+  "tooltip.pan_mode": {
+    "defaultMessage": "Toggle pan mode"
+  },
+  "tooltip.redo": {
+    "defaultMessage": "Redo"
+  },
+  "tooltip.select_mode": {
+    "defaultMessage": "Toggle select mode"
+  },
+  "tooltip.settings": {
+    "defaultMessage": "Podešavanja"
+  },
+  "tooltip.sidebar_view": {
+    "defaultMessage": "Show sidebar"
+  },
+  "tooltip.table_view": {
+    "defaultMessage": "Show table"
+  },
+  "tooltip.undo": {
+    "defaultMessage": "Undo"
+  },
+  "tooltip.ungroup": {
+    "defaultMessage": "Ungroup selected"
+  },
+  "tooltips.fit_to_selection": {
+    "defaultMessage": "Fit view to selection"
+  },
+  "valuelink.tooltip": {
+    "defaultMessage": "{count} mentions in {appName}"
+  },
+  "vertex_menu.add_link": {
+    "defaultMessage": "Add link"
+  },
+  "vertex_menu.expand": {
+    "defaultMessage": "Discover {property}"
+  },
+  "vertex_menu.expand_all": {
+    "defaultMessage": "all links"
+  },
+  "vertex_menu.expand_none": {
+    "defaultMessage": "No additional links found"
+  },
+  "xref.compute": {
+    "defaultMessage": "Compute"
+  },
+  "xref.entity": {
+    "defaultMessage": "Reference"
+  },
+  "xref.match": {
+    "defaultMessage": "Possible match"
+  },
+  "xref.match_collection": {
+    "defaultMessage": "Dataset"
+  },
+  "xref.recompute": {
+    "defaultMessage": "Re-compute"
+  },
+  "xref.score": {
+    "defaultMessage": "Količina usaglašenosti"
+  },
+  "xref.sort.default": {
+    "defaultMessage": "Default"
+  },
+  "xref.sort.label": {
+    "defaultMessage": "Sort by:"
+  },
+  "xref.sort.random": {
+    "defaultMessage": "Random"
+  }
+}

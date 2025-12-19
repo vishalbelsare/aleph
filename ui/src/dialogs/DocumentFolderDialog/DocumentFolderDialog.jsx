@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
-import { Intent, Dialog, Button } from '@blueprintjs/core';
+import { Classes, Intent, Button } from '@blueprintjs/core';
 import { defineMessages, injectIntl } from 'react-intl';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { ingestDocument } from 'src/actions';
-import { showErrorToast } from 'src/app/toast';
+import c from 'classnames';
+
+import withRouter from 'app/withRouter';
+import { forceMutate, ingestDocument } from 'actions';
+import { showErrorToast } from 'app/toast';
+import FormDialog from 'dialogs/common/FormDialog';
 
 const messages = defineMessages({
   title: {
@@ -34,7 +37,7 @@ export class DocumentFolderDialog extends Component {
       blocking: false,
     };
 
-    this.onFormSubmit = this.onFormSubmit.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
     this.onChangeTitle = this.onChangeTitle.bind(this);
   }
 
@@ -42,13 +45,9 @@ export class DocumentFolderDialog extends Component {
     this.setState({ title: event.target.value });
   }
 
-  async onFormSubmit(event) {
-    event.preventDefault();
-    const {
-      intl, collection, parent, history,
-    } = this.props;
-    const { title, blocking } = this.state;
-    if (blocking) return;
+  async onSubmit() {
+    const { intl, collection, parent, navigate } = this.props;
+    const { title } = this.state;
     this.setState({ blocking: true });
     try {
       const metadata = {
@@ -60,9 +59,12 @@ export class DocumentFolderDialog extends Component {
         metadata.parent_id = parent.id;
       }
       const ingest = this.props.ingestDocument;
-      const result = await ingest(collection.id, metadata, null, this.onUploadProgress);
-      history.push({
-        pathname: `/documents/${result.id}`,
+      const result = await ingest(collection.id, metadata, null, null);
+
+      this.props.forceMutate();
+
+      navigate({
+        pathname: `/entities/${result.id}`,
       });
     } catch (e) {
       showErrorToast(intl.formatMessage(messages.error));
@@ -75,47 +77,49 @@ export class DocumentFolderDialog extends Component {
     const { title, blocking } = this.state;
 
     return (
-      <Dialog
+      <FormDialog
+        processing={blocking}
         icon="folder-new"
         className="DocumentFolderDialog"
         isOpen={isOpen}
+        onSubmit={this.onSubmit}
         title={intl.formatMessage(messages.title)}
         onClose={toggleDialog}
       >
-        <form onSubmit={this.onFormSubmit}>
-          <div className="bp3-dialog-body">
-            <div className="bp3-form-group">
-              <div className="bp3-input-group bp3-large bp3-fill">
-                <input
-                  id="label"
-                  type="text"
-                  className="bp3-input"
-                  autoComplete="off"
-                  placeholder={intl.formatMessage(messages.untitled)}
-                  onChange={this.onChangeTitle}
-                  value={title}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="bp3-dialog-footer">
-            <div className="bp3-dialog-footer-actions">
-              <Button
-                type="submit"
-                disabled={blocking}
-                intent={Intent.PRIMARY}
-                text={intl.formatMessage(messages.save)}
+        <div className={Classes.DIALOG_BODY}>
+          <div className={Classes.FORM_GROUP}>
+            <div
+              className={c(Classes.INPUT_GROUP, Classes.LARGE, Classes.FILL)}
+            >
+              <input
+                id="label"
+                type="text"
+                className={Classes.INPUT}
+                autoComplete="off"
+                placeholder={intl.formatMessage(messages.untitled)}
+                onChange={this.onChangeTitle}
+                value={title}
               />
             </div>
           </div>
-        </form>
-      </Dialog>
+        </div>
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <Button
+              type="submit"
+              disabled={blocking}
+              intent={Intent.PRIMARY}
+              text={intl.formatMessage(messages.save)}
+            />
+          </div>
+        </div>
+      </FormDialog>
     );
   }
 }
-const mapDispatchToProps = { ingestDocument };
+const mapDispatchToProps = { forceMutate, ingestDocument };
 export default compose(
   withRouter,
   connect(null, mapDispatchToProps),
-  injectIntl,
+  injectIntl
 )(DocumentFolderDialog);

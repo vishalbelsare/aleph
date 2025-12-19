@@ -2,14 +2,12 @@ import React, { PureComponent, Component } from 'react';
 import { connect } from 'react-redux';
 import { defineMessages, injectIntl } from 'react-intl';
 import { Link } from 'react-router-dom';
-import {
-  Button, MenuItem, Position, Classes, Alignment,
-} from '@blueprintjs/core';
-import { Select as BlueprintSelect } from '@blueprintjs/select';
+import truncateText from 'truncate';
+import { Button, MenuItem, Classes, Alignment, Icon } from '@blueprintjs/core';
+import SelectWrapper from './SelectWrapper';
 
-import wordList from 'src/util/wordList';
-import { suggestRoles } from 'src/actions';
-import { Icon } from './Icon';
+import wordList from 'util/wordList';
+import { suggestRoles } from 'actions';
 
 import './Role.scss';
 
@@ -18,64 +16,64 @@ const messages = defineMessages({
     id: 'role.select.user',
     defaultMessage: 'Choose a user',
   },
+  placeholder: {
+    id: 'role.select.placeholder',
+    defaultMessage: 'Enter email address…',
+  },
 });
 
-
-class RoleLabel extends Component {
-  shouldComponentUpdate(nextProps) {
-    const { role } = this.props;
-    return role.id !== nextProps.role.id;
-  }
-
+class RoleLabel extends PureComponent {
   render() {
-    const { role, icon = true, long = false } = this.props;
-    if (!role) {
+    const { role, icon = true, long = false, truncate } = this.props;
+    if (!role || !role.type) {
       return null;
     }
+    const iconName = role.type === 'user' ? 'user' : 'shield';
+    let text = long ? role.label : role.name;
+    if (truncate) {
+      text = truncateText(text, truncate);
+    }
     return (
-      <React.Fragment>
-        { icon && (
-          <React.Fragment>
-            <Icon name="person" />
-          </React.Fragment>
-        )}
-        { long ? role.label : role.name }
-      </React.Fragment>
+      <span className="Role">
+        {icon && <Icon icon={iconName} />}
+        <span>{text}</span>
+      </span>
     );
   }
 }
-
 
 class RoleLink extends PureComponent {
   render() {
     const { role } = this.props;
-    if (!role) {
-      return null;
+    const content = <RoleLabel {...this.props} />;
+    if (role && role.type && role.type === 'group') {
+      return <Link to={`/groups/${role.id}`}>{content}</Link>;
     }
-    return (
-      <Link to={`/sources?collectionsfilter:team_id=${role.id}`}>
-        <RoleLabel {...this.props} />
-      </Link>
-    );
+    return content;
   }
 }
 
-
 class RoleList extends PureComponent {
   render() {
-    const { roles, truncate = Infinity } = this.props;
+    const {
+      roles,
+      separateItems,
+      truncate = Infinity,
+      truncateItem,
+    } = this.props;
     if (!roles) return null;
 
-    let names = roles.map(role => <RoleLink key={role.id} role={role} {...this.props} />);
+    let names = roles.map((role) => (
+      <RoleLink key={role.id} role={role} truncate={truncateItem} />
+    ));
 
     // Truncate if too long
     if (names.length > truncate) {
       names = [...names.slice(0, truncate), '…'];
     }
-    return wordList(names, ' · ');
+    return separateItems ? wordList(names, ' · ') : names;
   }
 }
-
 
 class Select extends Component {
   constructor(props) {
@@ -88,58 +86,83 @@ class Select extends Component {
     this.onSelectRole = this.onSelectRole.bind(this);
   }
 
+  static getDerivedStateFromProps(props) {
+    return { isFixed: !!props.roles };
+  }
+
   async onSuggest(query) {
-    if (query.length <= 3) {
+    this.setState({ query });
+
+    const { isFixed } = this.state;
+    if (isFixed) {
       return;
     }
+
+    if (this.state.query === query) {
+      // Prevent loading suggestions if the query hasn't changed.
+      // See https://github.com/palantir/blueprint/issues/2983
+      return;
+    }
+
+    if (query.length < 6) {
+      this.setState({ suggested: [] });
+      return;
+    }
+
     const { exclude = [] } = this.props;
     const roles = await this.props.suggestRoles(query, exclude);
-    this.setState({
-      suggested: roles.results,
-    });
+    this.setState({ suggested: roles.results });
   }
 
   onSelectRole(role, event) {
     event.stopPropagation();
-    this.props.onSelect(role);
+    this.props.onSelect(role, this.state.query);
   }
 
   renderRole = (role, { handleClick, modifiers }) => (
     <MenuItem
       className={modifiers.active ? Classes.ACTIVE : ''}
+      icon={role.type === 'user' ? 'user' : 'shield'}
       key={role.id}
       onClick={handleClick}
       text={role.label}
     />
-  )
+  );
 
   render() {
-    const { intl, role } = this.props;
-    const { suggested } = this.state;
+    const { intl, role, roles } = this.props;
+    const { isFixed, suggested } = this.state;
+    const items = roles || suggested;
     const label = role ? role.label : intl.formatMessage(messages.label);
     return (
-      <BlueprintSelect
+      <SelectWrapper
         itemRenderer={this.renderRole}
-        items={suggested}
+        items={items}
         onItemSelect={this.onSelectRole}
         onQueryChange={this.onSuggest}
         popoverProps={{
           minimal: true,
-          position: Position.BOTTOM_LEFT,
+          fill: true,
         }}
-        fill
-        filterable
-        resetOnQuery
-        resetOnClose
-        resetOnSelect
+        inputProps={{
+          type: 'email',
+          fill: true,
+          placeholder: intl.formatMessage(messages.placeholder),
+        }}
+        activeItem={role}
+        filterable={!isFixed}
+        resetOnQuery={!isFixed}
+        resetOnClose={!isFixed}
+        resetOnSelect={!isFixed}
       >
         <Button
           fill
           text={label}
-          alignText={Alignment.LEFT}
+          icon="user"
           rightIcon="search"
+          alignText={Alignment.LEFT}
         />
-      </BlueprintSelect>
+      </SelectWrapper>
     );
   }
 }
@@ -151,7 +174,7 @@ class Role {
 
   static List = RoleList;
 
-  static Select = connect(null, { suggestRoles })(injectIntl(Select));;
+  static Select = connect(null, { suggestRoles })(injectIntl(Select));
 }
 
 export default Role;

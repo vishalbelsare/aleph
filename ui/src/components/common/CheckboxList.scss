@@ -1,37 +1,39 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
 
 .CheckboxList {
   list-style: none;
-  padding-left: 0;
-  padding-bottom: $aleph-grid-size;
-  margin: 0;
+  @include rtlSupportInvertedProp(padding, left, 0, null);
+  margin-bottom: $aleph-grid-size;
 
   & > li {
     position: relative;
     display: flex;
     justify-content: space-between;
-    padding-left: ($pt-icon-size-standard + $aleph-grid-size * 1.5);
-    padding-right: ($aleph-grid-size / 2);
+    @include rtlSupportInvertedProp(
+      padding,
+      left,
+      ($pt-icon-size-standard + $aleph-grid-size * 1.5),
+      ($aleph-grid-size * 0.5)
+    );
 
     &.faint {
       color: $aleph-greyed-text;
     }
 
-    & > .Tick {
+    .tick {
       position: absolute;
-      left: ($aleph-grid-size / 2);
-      line-height: $aleph-line-height;
-
-      &::before {
-        content: $pt-icon-tick;
-      }
-
+      @include rtl(left, ($aleph-grid-size * 0.5), null);
+      @include rtl(right, null, ($aleph-grid-size * 0.5));
+      top: 3px;
       opacity: 0.1;
-      transition: opacity 0.2s ease-out;
+      transition:
+        opacity 0.2s ease-out,
+        color 0.2s ease-out;
     }
 
     &.active {
-      .Tick {
+      .tick {
         opacity: 1;
         color: $pt-intent-primary;
       }
@@ -46,9 +48,9 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-  
+
     & > span {
-      margin: ($aleph-grid-size / 2);
+      margin: ($aleph-grid-size * 0.5);
     }
 
     .count {

@@ -1,20 +1,30 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
 
 .QueryFilterTag {
   max-width: 15em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: $aleph-grid-size;
+  @include rtlSupportInvertedProp(margin, right, $aleph-grid-size, null);
   margin-bottom: $aleph-grid-size;
   font-weight: bold;
-  
+  height: $aleph-query-tag-height;
 
-  &.bp3-tag {
+  &.#{$bp-ns}-tag {
     background-color: $aleph-theme-intent;
   }
 
-  a, a:hover {
+  &.filter-clear-tag {
+    vertical-align: initial;
+    font-weight: normal !important;
+    border-color: $aleph-link-color !important;
+    color: $aleph-link-color !important;
+    height: $aleph-query-tag-height;
+  }
+
+  a,
+  a:hover {
     color: white;
     text-decoration: none;
   }

@@ -1,0 +1,8 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.CategoryLabel {
+  .#{$bp-ns}-icon {
+    @include rtlSupportInvertedProp(margin, right, $aleph-icon-padding, null);
+  }
+}

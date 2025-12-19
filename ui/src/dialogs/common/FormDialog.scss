@@ -1,0 +1,45 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.#{$bp-ns}-dialog {
+  position: relative;
+
+  .#{$bp-ns}-input.#{$bp-ns}-tag-input {
+    border-radius: 3px;
+  }
+
+  input {
+    font-size: 14px;
+  }
+}
+
+.FormDialog {
+  &__content {
+    position: relative;
+  }
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    @include rtl(left, 0, null);
+    @include rtl(right, null, 0);
+    width: 100%;
+    height: 100%;
+    background: $light-gray5;
+    opacity: 0.7;
+    z-index: 2;
+  }
+
+  &__spinner.#{$bp-ns}-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+  }
+
+  &__spacer {
+    text-align: center;
+    margin: $aleph-grid-size 0;
+  }
+}

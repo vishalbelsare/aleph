@@ -1,8 +1,22 @@
 import { createReducer } from 'redux-act';
-import { setLocale } from 'src/actions';
+import { setConfigValue, dismissHint, setLocale } from 'actions';
 
 const initialState = {};
 
-export default createReducer({
-  [setLocale]: (state, { locale }) => ({ locale }),
-}, initialState);
+export default createReducer(
+  {
+    [setConfigValue]: (state, newVal) => {
+      return { ...state, ...newVal };
+    },
+    [setLocale]: (state, { locale }) => ({ locale }),
+    [dismissHint]: (state, { id }) => {
+      const current = state.dismissedHints || [];
+
+      return {
+        ...state,
+        dismissedHints: [...current, id],
+      };
+    },
+  },
+  initialState
+);

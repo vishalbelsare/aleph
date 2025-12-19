@@ -1,37 +1,27 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
 
-import SectionLoading from 'src/components/common/SectionLoading';
-import { selectDocumentContent } from 'src/selectors';
+import { Skeleton } from 'components/common';
 
 import './HtmlViewer.scss';
-/* eslint-disable */
 
 class HtmlViewer extends Component {
   render() {
-    const { content } = this.props;
-    if (content.shouldLoad || content.isLoading) {
-      return <SectionLoading />;
-    }
+    const { document, dir } = this.props;
+    const body = document.isPending ? (
+      <Skeleton.Text type="p" length={4000} />
+    ) : (
+      document.safeHtml.map((value, index) => (
+        <div key={index} dangerouslySetInnerHTML={{ __html: value }} />
+      ))
+    );
     return (
-      <React.Fragment>
-        <div className="outer">
-          <div className="inner HtmlViewer">
-            <span dangerouslySetInnerHTML={{ __html: content.html }} />
-          </div>
+      <div className="outer">
+        <div className="inner HtmlViewer" dir={dir}>
+          {body}
         </div>
-      </React.Fragment>
+      </div>
     );
   }
 }
 
-
-const mapStateToProps = (state, ownProps) => {
-  const { document } = ownProps;
-  return {
-    content: selectDocumentContent(state, document.id),
-  };
-};
-
-HtmlViewer = connect(mapStateToProps)(HtmlViewer);
 export default HtmlViewer;

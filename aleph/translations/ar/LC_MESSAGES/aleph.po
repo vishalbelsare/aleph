@@ -1,137 +1,283 @@
 # Translations template for PROJECT.
-# Copyright (C) 2019 ORGANIZATION
+# Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+# 
+# Translators:
+# Eman Alqaisi <eman@arij.net>, 2020
+# 0b38b3fc9a159eeff98ff92db4d3a930_afb7db4 <153391c83915ff7e79f911dee10b3995_904978>, 2020
+# Mohammed AlKawmani <komani@arij.net>, 2020
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-05-06 14:13+0200\n"
+"POT-Creation-Date: 2024-11-11 12:15+0000\n"
 "PO-Revision-Date: 2018-03-15 07:37+0000\n"
-"Language-Team: Arabic (https://www.transifex.com/aleph/teams/76591/ar/)\n"
+"Last-Translator: Mohammed AlKawmani <komani@arij.net>, 2020\n"
+"Language-Team: Arabic (https://app.transifex.com/aleph/teams/76591/ar/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.6.0\n"
+"Generated-By: Babel 2.12.1\n"
 "Language: ar\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: aleph/settings.py:25
+#: aleph/settings.py:38
 msgid "Aleph"
-msgstr ""
+msgstr "ألف"
 
-#: aleph/settings.py:39
-msgid "TeliaSonera"
-msgstr ""
+#: aleph/logic/entities.py:107
+msgid "No schema on entity"
+msgstr "لا جزئية في هذا الكل "
 
-#: aleph/settings.py:39
-msgid "Vladimir Putin"
-msgstr ""
+#: aleph/logic/html.py:64
+msgid "[HTML removed: could not be sanitized]"
+msgstr "[تمت إزالة HTML: تعذر تنظيف المحتوى]"
 
-#: aleph/logic/roles.py:41
+#: aleph/logic/roles.py:60
 msgid "Registration"
-msgstr ""
-
-#: aleph/model/collection.py:25
-msgid "News archives"
-msgstr ""
-
-#: aleph/model/collection.py:26
-msgid "Leaks"
-msgstr ""
+msgstr "التسجيل"
 
 #: aleph/model/collection.py:27
-msgid "Land registry"
-msgstr ""
+msgid "News archives"
+msgstr "أرشيف الأخبار"
 
 #: aleph/model/collection.py:28
-msgid "Gazettes"
-msgstr ""
+msgid "Leaks"
+msgstr "تسريبات"
 
 #: aleph/model/collection.py:29
-msgid "Court archives"
-msgstr ""
+msgid "Land registry"
+msgstr "سجلات الأراضي"
 
 #: aleph/model/collection.py:30
-msgid "Company registries"
-msgstr ""
+msgid "Gazettes"
+msgstr "الجريدة الرسمية"
 
 #: aleph/model/collection.py:31
-msgid "Sanctions lists"
-msgstr ""
+msgid "Court archives"
+msgstr "أرشيف المحكمة"
 
 #: aleph/model/collection.py:32
-msgid "Procurement"
-msgstr ""
+msgid "Company registries"
+msgstr "سجلات الشركات"
 
 #: aleph/model/collection.py:33
-msgid "Financial records"
-msgstr ""
+msgid "Sanctions lists"
+msgstr "قوائم العقوبات"
 
 #: aleph/model/collection.py:34
-msgid "Grey literature"
-msgstr ""
+msgid "Procurement"
+msgstr "المشتريات"
 
 #: aleph/model/collection.py:35
-msgid "Document libraries"
-msgstr ""
+msgid "Financial records"
+msgstr "السجلات المالية"
 
 #: aleph/model/collection.py:36
-msgid "Licenses and concessions"
-msgstr ""
+msgid "Grey literature"
+msgstr "المنشورات غير الرسمية"
 
 #: aleph/model/collection.py:37
-msgid "Regulatory filings"
-msgstr ""
+msgid "Document libraries"
+msgstr "المستندات المكتبية"
 
 #: aleph/model/collection.py:38
-msgid "Persons of interest"
-msgstr ""
+msgid "Licenses and concessions"
+msgstr "التراخيص والامتيازات"
 
 #: aleph/model/collection.py:39
-msgid "Customs declarations"
-msgstr ""
+msgid "Regulatory filings"
+msgstr "الملفات التنظيمية"
 
 #: aleph/model/collection.py:40
-msgid "Population census"
-msgstr ""
+msgid "Persons of interest"
+msgstr "الأشخاص المعنيون"
 
 #: aleph/model/collection.py:41
-msgid "Air and maritime registers"
-msgstr ""
+msgid "Customs declarations"
+msgstr "البيانات الجمركية"
 
 #: aleph/model/collection.py:42
+msgid "Population census"
+msgstr "التعداد السكاني"
+
+#: aleph/model/collection.py:43
+msgid "Air and maritime registers"
+msgstr "السجلات الجوية والبحرية"
+
+#: aleph/model/collection.py:44
+msgid "Investigations"
+msgstr ""
+
+#: aleph/model/collection.py:45
 msgid "Other material"
+msgstr "مواد أخرى"
+
+#: aleph/model/collection.py:51
+msgid "not known"
+msgstr "غير معروف"
+
+#: aleph/model/collection.py:52
+msgid "not updated"
+msgstr "لم يحدث بعد"
+
+#: aleph/model/collection.py:53
+msgid "daily"
+msgstr "يومي"
+
+#: aleph/model/collection.py:54
+msgid "weekly"
+msgstr "آسبوعي"
+
+#: aleph/model/collection.py:55
+msgid "monthly"
+msgstr "شهري"
+
+#: aleph/model/collection.py:56
+msgid "annual"
+msgstr "سنوي"
+
+#: aleph/model/common.py:114
+msgid "pending"
+msgstr "قيد الانتظار"
+
+#: aleph/model/common.py:115
+msgid "successful"
 msgstr ""
 
-#: aleph/model/event.py:48
+#: aleph/model/common.py:116
+msgid "failed"
+msgstr "فشلت العملية"
+
+#: aleph/model/entity.py:75
+msgid "Invalid entity ID"
+msgstr "معرف الكيان غير صحيح او غير موجود"
+
+#: aleph/model/event.py:49
+msgid "New datasets"
+msgstr ""
+
+#: aleph/model/event.py:50
 msgid "{{actor}} created {{collection}}"
+msgstr "{{actor}} أنشأ {{collection}}"
+
+#: aleph/model/event.py:57
+msgid "Document uploads"
 msgstr ""
 
-#: aleph/model/event.py:55
-msgid "{{actor}} changed the settings of {{collection}}"
-msgstr ""
-
-#: aleph/model/event.py:62
+#: aleph/model/event.py:58
 msgid "{{actor}} added {{document}} to {{collection}}"
+msgstr "{{actor}} أضيف {{document}} إلى {{collection}}"
+
+#: aleph/model/event.py:65
+msgid "Entities generated"
 msgstr ""
 
-#: aleph/model/event.py:72
+#: aleph/model/event.py:66
+msgid "{{actor}} generated entities from {{table}} in {{collection}}"
+msgstr "{{actor}} أنشأ كيانات من {{table}} في {{collection}}"
+
+#: aleph/model/event.py:75
+msgid "New network diagram"
+msgstr ""
+
+#: aleph/model/event.py:76
+msgid "{{actor}} began diagramming {{diagram}} in {{collection}}"
+msgstr " {{actor}} بدأ برسم {{diagram}} في {{collection}}"
+
+#: aleph/model/event.py:85
+msgid "New diagrams and lists"
+msgstr ""
+
+#: aleph/model/event.py:86
+msgid "{{actor}} created {{entityset}} in {{collection}}"
+msgstr "{{actor}} أنشأ {{entityset}} في {{collection}}"
+
+#: aleph/model/event.py:93
+msgid "Alert notifications"
+msgstr ""
+
+#: aleph/model/event.py:94
 msgid "{{entity}} matches your alert for {{alert}}"
+msgstr "{{entity}} يطابق اشعارك ل {{alert}}"
+
+#: aleph/model/event.py:101
+msgid "Dataset access change"
 msgstr ""
 
-#: aleph/model/event.py:83
+#: aleph/model/event.py:102
 msgid "{{actor}} gave {{role}} access to {{collection}}"
+msgstr "{{actor}} منح {{role}} الوصول إلى {{collection}}"
+
+#: aleph/model/event.py:111
+msgid "Dataset published"
 msgstr ""
 
-#: aleph/model/event.py:100
-msgid "{{actor}} removed access to {{collection}} from {{role}}"
+#: aleph/model/event.py:112
+msgid "{{actor}} published {{collection}}"
+msgstr "{{actor}} نشر {{collection}}"
+
+#: aleph/model/event.py:119
+msgid "Exports completed"
 msgstr ""
 
-#: aleph/search/__init__.py:30
+#: aleph/model/event.py:120
+msgid "{{export}} is ready for download"
+msgstr ""
+
+#: aleph/search/__init__.py:77
 msgid "No schema is specified for the query."
+msgstr "لم يتم تحديد مخطط للاستعلام."
+
+#: aleph/templates/email/api_key_expired.html:5
+#, python-format
+msgid "Your Aleph API key has expired on %(expires_at)s UTC."
+msgstr ""
+
+#: aleph/templates/email/api_key_expired.html:11
+#: aleph/templates/email/api_key_expires_soon.html:11
+#, python-format
+msgid ""
+"If you do not use the Aleph API, or only use the API to access public data "
+"you can ignore this email. If you use the Aleph API to access data that is "
+"not publicly accessible then you’ll need to <a "
+"href=\"%(settings_url)s\">regenerate your API key</a> to maintain access."
+msgstr ""
+
+#: aleph/templates/email/api_key_expires_soon.html:5
+#, python-format
+msgid "Your Aleph API key will expire in 7 days, on %(expires_at)s UTC."
+msgstr ""
+
+#: aleph/templates/email/api_key_generated.html:5
+msgid ""
+"Your Aleph API key has been regenerated. If that wasn’t you, please contact "
+"an administrator."
+msgstr ""
+
+#: aleph/templates/email/api_key_generated.html:9
+msgid ""
+"An Aleph API key has been generated for your account. If that wasn’t you, "
+"please contact an administrator."
+msgstr ""
+
+#: aleph/templates/email/export.html:5
+msgid ""
+"\n"
+"    The following export is ready for download:\n"
+"    "
+msgstr ""
+
+#: aleph/templates/email/export.html:13
+#, python-format
+msgid ""
+"\n"
+"    This download link will expire on %(expiration_date)s.\n"
+"    Browse all of your available exports here:\n"
+"    "
 msgstr ""
 
 #: aleph/templates/email/layout.html:45
@@ -141,6 +287,8 @@ msgid ""
 "        Dear %(name)s,\n"
 "      "
 msgstr ""
+"\n"
+"العزيز/ة%(name)s"
 
 #: aleph/templates/email/layout.html:53
 #, python-format
@@ -149,6 +297,8 @@ msgid ""
 "          This email was sent by <a href=\"%(ui_url)s\">%(app_title)s</a>\n"
 "        "
 msgstr ""
+"\n"
+"تم إرسال الإيميل بواسطة<a href=\"%(ui_url)s\">%(app_title)s</a>"
 
 #: aleph/templates/email/notifications.html:5
 #, python-format
@@ -158,6 +308,8 @@ msgid ""
 "      updates you may be interested in:\n"
 "    "
 msgstr ""
+"\n"
+"لديك (عدد) %(total_count)sمن الإشعارات المعلقة. إليك آخر التحديثات التي قد تكون مهمة لك:"
 
 #: aleph/templates/email/notifications.html:16
 msgid ""
@@ -165,6 +317,8 @@ msgid ""
 "      Browse and manage all of your notifications here:\n"
 "    "
 msgstr ""
+"\n"
+"لتصفح وإدارة جميع الإشعارات الخاصة بك:"
 
 #: aleph/templates/email/registration_code.html:5
 #, python-format
@@ -173,47 +327,110 @@ msgid ""
 "      To complete your registration, please visit <a href=\"%(url)s\">our signup page</a>.\n"
 "    "
 msgstr ""
+"\n"
+"لإتمام التسجيل، يرجى زيارة <a href=\"%(url)s\">صفحة التسجيل</a> لدينا"
 
-#: aleph/views/base_api.py:118
-msgid "/api/1/ is deprecated, please use /api/2/."
-msgstr ""
+#: aleph/validation/formats.py:19
+msgid "Invalid user locale."
+msgstr "اسم المستخدم غير صحيح"
 
-#: aleph/views/base_api.py:139
+#: aleph/validation/formats.py:27
+#, python-format
+msgid "Invalid entity ID: %s"
+msgstr "معرف الكيان غير صحيح: %s"
+
+#: aleph/validation/formats.py:35
+msgid "Invalid category."
+msgstr "الفئة غير متاحة"
+
+#: aleph/validation/formats.py:42
+msgid "Invalid frequency."
+msgstr "لم يتكرر"
+
+#: aleph/validation/formats.py:49
+msgid "Invalid set type."
+msgstr "نوع المجموعة غير صالح"
+
+#: aleph/validation/formats.py:56
+msgid "Invalid URL."
+msgstr "عنوان URL غير صحيح"
+
+#: aleph/validation/formats.py:64
+msgid "Invalid language code."
+msgstr "رمز اللغة غير صحيح"
+
+#: aleph/validation/formats.py:72
+#, python-format
+msgid "Invalid country code: %s"
+msgstr "رمز الدولة غير صحيح:1 %s"
+
+#: aleph/validation/formats.py:81
+#, python-format
+msgid "Invalid schema name: %s"
+msgstr "اسم مخطط غير صحيح : 1%s"
+
+#: aleph/validation/formats.py:89
+#, python-format
+msgid "Invalid date: %s"
+msgstr "تاريخ خاطئ 1%s"
+
+#: aleph/views/base_api.py:238
 msgid "You are not authorized to do this."
-msgstr ""
+msgstr "غير مخول للقيام بذلك."
 
-#: aleph/views/base_api.py:148
+#: aleph/views/base_api.py:247
 msgid "This path does not exist."
-msgstr ""
+msgstr "هذا المسار غير موجود."
 
-#: aleph/views/base_api.py:157
+#: aleph/views/base_api.py:254
 msgid "Internal server error."
-msgstr ""
+msgstr "خطأ في الخادم الداخلي."
 
-#: aleph/views/base_api.py:175
+#: aleph/views/base_api.py:268
 msgid "Access token is invalid."
+msgstr "رمز الدخول غير صحيح"
+
+#: aleph/views/entities_api.py:173
+#, python-format
+msgid "Search: %s"
 msgstr ""
 
-#: aleph/views/base_api.py:184
-msgid "There was an error during search"
-msgstr ""
-
-#: aleph/views/roles_api.py:28
+#: aleph/views/roles_api.py:64
 msgid "prefix filter is too short"
-msgstr ""
+msgstr "مرشح البادئة قصير جدًا"
 
-#: aleph/views/roles_api.py:44
+#: aleph/views/roles_api.py:113
 msgid "To proceed, please check your email."
-msgstr ""
+msgstr "للمتابعة ، يرجى مراجعة بريدك الإلكتروني."
 
-#: aleph/views/roles_api.py:59
+#: aleph/views/roles_api.py:146
 msgid "Invalid code"
-msgstr ""
+msgstr "الرمز غير صحيح"
 
-#: aleph/views/roles_api.py:66
+#: aleph/views/roles_api.py:152
 msgid "Email is already registered"
+msgstr " البريد الإلكتروني مسجل سابقا"
+
+#: aleph/views/roles_api.py:241
+msgid "Incorrect password."
+msgstr "كلمة المرور خاطئة"
+
+#: aleph/views/serializers.py:103
+#, python-format
+msgid ""
+"We found %(total)d results, but could not load them due to a technical "
+"problem. Please check back later and if the problem persists contact an "
+"Aleph administrator"
 msgstr ""
 
-#: aleph/views/util.py:47
+#: aleph/views/sessions_api.py:75
+msgid "Invalid user or password."
+msgstr "اسم مستخدم أو كلمة مرور غير صحيحة"
+
+#: aleph/views/sessions_api.py:120
+msgid "Authentication has failed."
+msgstr "فشل التوثيق "
+
+#: aleph/views/util.py:77
 msgid "Error during data validation"
-msgstr ""
+msgstr "حدث خطأ أثناء التحقق من صحة البيانات"

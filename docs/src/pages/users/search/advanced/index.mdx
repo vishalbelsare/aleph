@@ -1,0 +1,241 @@
+---
+layout: '@layouts/UsersLayout.astro'
+title: Advanced search
+---
+
+# Advanced search options
+
+<p class="lead">Beyond a simple keyword search, Aleph supports many more complex search operations to find matches based on spelling variations, proximity to other terms, and much more.</p>
+
+To view the advanced options available in Aleph, click the advanced search button next to the search bar. A pop-up will appear explaining each of the available operations.
+
+<Image
+  src="/assets/pages/users/search/advanced/advanced-search-options.png"
+  density={2}
+/>
+
+Each of the options in the pop-up allows you to enter a term or terms. Once you have entered a term, clicking **Search** executes a search with your updated advanced option. You will notice that each time you enter a new advanced option, the keywords in the main search bar will change, indicating the option you've selected.
+
+We will go through each of the advanced search operations in more detail below.
+
+## Finding an exact phrase or name
+
+By default, Aleph returns matches that include all of your keywords first, followed by matches that might only include one of your keywords.
+
+For example, if you type the keywords:
+
+```
+Vladimir Putin
+```
+
+Aleph will return all matches that have the words "Vladimir" and "Putin," followed by matches that have either "Vladimir" or "Putin" but not both, in them. Depending on your needs, this might not be ideal.
+
+{/*TODO Check if the above is still correct.*/}
+
+If you want Aleph to only return matches that have exactly "Vladimir Putin", then you should put quotations around those two keywords:
+
+```
+"Vladimir Putin"
+```
+
+<Callout>
+  A quoted search like "Vladimir Putin" returns results that contain all terms in the exact same order. However, Aleph applies some normalization (like transliteration) of the keyword and documents, so searching for "Vladimir Putin" would also return results that contain "Владимир Путин" (and vice versa).
+</Callout>
+
+<Image
+  src="/assets/pages/users/search/advanced/exact-search.png"
+  density={2}
+/>
+
+Instead of using quotes, you can also do this by writing "Validimir Putin" in the **This exact word/phrase** field in the advanced search options:
+
+<Image
+  src="/assets/pages/users/search/advanced/exact-search-alternative.png"
+  density={2.5}
+/>
+
+## Allow for variations in spelling
+
+Sometimes a name can be spelled many different ways or even misspelled many different ways. One way to solve this problem is to simply type each variation in the search form:
+
+```
+Владимир Путин Poutine Wladimir Путин Путину Путином
+```
+
+You might capture all the variations you want, but you also might miss some by accident. Another way to tell Aleph to look for variants of a name is to use the ~ operator:
+
+```
+Putin~2
+```
+
+What this translates to: Give me matches that include the keyword "Putin", but also matches that include up to any 2 letter variations of "Putin". These variations include adding, removing, and changing a letter.
+
+{/*TODO Clarify and add example*/}
+
+<Image
+  src="/assets/pages/users/search/advanced/fuzzy-search.png"
+  density={2}
+/>
+
+<Callout>You can only search for spelling variations with a maximum difference of two letters.</Callout>
+
+## Search for words that should be in proximity to each other
+
+If you do not want to find a precise keyword, but merely specify that two words are supposed to appear close to each other, you might want to use a **proximity search**, which also uses the **~** operator. This will try to find all the requested search keywords within a given distance from each other. For example, to find matches where the keywords Trump and Putin are ten or fewer words apart from each other, you can formulate the search as:
+
+```
+"Trump Putin"~10
+```
+
+## Including and excluding combinations of keywords
+
+You can tell Aleph to find matches to multiple keywords in a variety of ways or combinations, otherwise known as a composite search.
+
+To tell Aleph that a keyword must exist in all resulting matches, use a **+** operator. Similarly, to tell Aleph that a keyword must not exist in any of the resulting matches, use - operator.
+
+```
++Trump -Putin
+```
+
+This translates to: Give me all matches in which each match must include the keyword Trump and must definitely not include the keyword Putin.
+
+You can take these combinations a step further using the **AND** operator or the **OR** operator.
+
+```
+Trump AND Putin
+```
+
+This translates to: Give me all matches in which each match must contain both the keywords Trump and Putin, but don't return any matches that only contain just one of those keywords.
+
+```
+Trump OR Putin
+```
+
+This translates to: Give me all matches in which each match may contain the keywords Trump or Putin or both.
+
+You can build on these searches even further like so:
+
+```
++Trump AND (Salman OR Putin) -South Korea
+```
+
+This translates to: Give me all matches in which each match must contain the keyword Trump and must contain either the keyword Salman or the keyword Putin, but must not contain the keywords South Korea.
+
+## Filter search results based on specific properties
+
+You can filter search results based on the values of specific entity properties. For example, the following query will return only entities with `john.doe@example.org` as a value of the `email` property:
+
+```
+properties.email:john.doe@example.org
+```
+
+An important difference to other search queries is that these filters only match exact values. For example, the query above wouldn’t match an entity with `johndoe@example.org` (without the dot between the first and last name). If you want to match such variations, you can use the `~` operator introduced above or a regular expression search.
+
+Using the spelling variations operator:
+
+```
+properties.email:john.doe@example.org~1
+```
+
+Using a regular expression:
+
+```
+properties.email:/john.?doe@example.org/
+```
+
+<Callout>
+  Filtering search results based on property values isn’t available for properties of type [`text`](https://followthemoney.tech/explorer/types/text/). For example, the following query won’t return any results (even if there is an entity with a matching `notes` property), because [`notes`](https://followthemoney.tech/explorer/schemata/Thing/#property-notes) is of the `text` property type.
+
+  ```
+  properties.notes:"Lorem ipsum"
+  ```
+</Callout>
+
+### Filter based on date properties
+
+In addition to the queries described in the previous section, you can use special operators to filter search results based on date properties.
+
+For example, the following query returns only entities with a value greater than `2010-07-01` (July 1st, 2010) in the `incorporationDate` property:
+
+```
+properties.incorporationDate:>2010-07-01
+```
+
+To search for entities with an incorporation date including July 1st, use the `>=` operator:
+
+```
+properties.incorporationDate:>=2010-07-01
+```
+
+Searching for values less than a value works analogously:
+
+```
+properties.incorporationDate:<2010-07-01
+properties.incorporationDate:<=2017-07-01
+```
+
+You can also query results with values in a range. FOr example, the following query returns only entities with a value between `2010-01-01` and `2015-12-31`:
+
+```
+properties.incorporationDate:[2010-01-01 TO 2015-12-31]
+```
+
+The bounds of the range are inclusive, that is, in case of the query above, it includes entities with values of `2015-01-01` and `2015-12-31` in the `incorporationDate` property.
+
+### Filter based on numeric properties
+
+You can use the same operators described in the previous section to filter search results based on numeric properties. However, you need to prefix the property names with `numeric.` instead of `properties.`.
+
+For example, the following query returns only entities with a value greater than `99` in the `rowCount` property:
+
+```
+numeric.rowCount:>99
+```
+
+## Filter search results based on metadata
+
+Aleph stores additional information about entities that isn’t part of the entity properties. This includes the entity schema and the ID of the dataset or investigation the entity is part of. While you can filter based on this information using Aleph’s search UI, you can also use it in search queries:
+
+### Filter based on entity schema
+
+The following query returns only `LegalEntity` entities:
+
+```
+schema:LegalEntity
+```
+
+Note that this does not include entities with a schema that inherits from `LegalEntity`. For example, while the `Company` schema inherits from `LegalEntity`, it wouldn’t return `Company` entities.
+
+Instead, you can use the following query to return only entities that use the `LegalEntity` schema or any schema inheriting from `LegalEntity` (such as `Person` or `Company`):
+
+```
+schemata:LegalEntity
+```
+
+### Filter based on dataset or investigation
+
+To filter based on a dataset or investigation, you need to know its ID. You can find the ID in the URL of the dataset or investigation. For example, in the following two URLs, the IDs are `123` and `456`, respectively.
+
+```
+https://aleph.occrp.org/datasets/123
+https://aleph.occrp.org/investigations/456
+```
+
+You can then use the ID to filter search results to include only entities from a particular dataset or investigation. For example, the following query returns only entities from the dataset with the ID `123`:
+
+```
+collection_id:123
+```
+
+## Full search query syntax
+
+Under the hood, Aleph uses a search engine called Elasticsearch. In addition to the advanced search options explained above, you can also use the full Elasticsearch query syntax. Please refer to the [Elasticsearch documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) for more information.
+
+<Callout theme="danger">
+  Some search options supported by the Elasticsearch query syntax (such as wildcards and regular expressions) are very slow. Use these features carefully and ideally limit the searches to specific datasetes or investigations.
+</Callout>
+
+## Putting it all together
+
+You can combine any of the methods supported by Aleph in many combinations to create some very explicit search rules. The complexity, of course, depends on your needs.
+

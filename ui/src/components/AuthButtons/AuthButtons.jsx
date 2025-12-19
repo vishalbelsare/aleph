@@ -1,21 +1,37 @@
 import React, { Component } from 'react';
-import { defineMessages, FormattedMessage, injectIntl } from 'react-intl';
-import { Link } from 'react-router-dom';
-import {
-  Button, Icon, Menu, MenuDivider, MenuItem, Popover, Position,
-} from '@blueprintjs/core';
+import { defineMessages, injectIntl } from 'react-intl';
+import { connect } from 'react-redux';
+import { Button, Classes, Menu, MenuDivider } from '@blueprintjs/core';
+import { Popover2 as Popover } from '@blueprintjs/popover2';
 
-import SettingsDialog from 'src/dialogs/SettingsDialog/SettingsDialog';
-import AuthenticationDialog from 'src/dialogs/AuthenticationDialog/AuthenticationDialog';
-import QueryLogsDialog from 'src/dialogs/QueryLogsDialog/QueryLogsDialog';
+import { fetchRole } from 'actions';
+import {
+  selectCurrentRole,
+  selectCurrentRoleId,
+  selectMetadata,
+} from 'selectors';
+import AuthenticationDialog from 'dialogs/AuthenticationDialog/AuthenticationDialog';
+import { DialogToggleButton } from 'components/Toolbar';
+import { Skeleton, LinkMenuItem } from 'components/common';
 
 import './AuthButtons.scss';
 
-
 const messages = defineMessages({
-  view_notifications: {
+  notifications: {
     id: 'nav.view_notifications',
     defaultMessage: 'Notifications',
+  },
+  diagrams: {
+    id: 'nav.diagrams',
+    defaultMessage: 'Network diagrams',
+  },
+  timelines: {
+    id: 'nav.timelines',
+    defaultMessage: 'Timelines',
+  },
+  lists: {
+    id: 'nav.lists',
+    defaultMessage: 'Lists',
   },
   settings: {
     id: 'nav.settings',
@@ -27,86 +43,139 @@ const messages = defineMessages({
   },
   signin: {
     id: 'nav.signin',
-    defaultMessage: 'Sign in / Register',
+    defaultMessage: 'Sign in',
   },
-  queryLogs: {
-    id: 'nav.queryLogs',
-    defaultMessage: 'Search history',
+  exports: {
+    id: 'nav.exports',
+    defaultMessage: 'Exports',
+  },
+  alerts: {
+    id: 'nav.alerts',
+    defaultMessage: 'Alerts',
+  },
+  cases: {
+    id: 'nav.menu.cases',
+    defaultMessage: 'Investigations',
+  },
+  status: {
+    id: 'nav.status',
+    defaultMessage: 'System status',
   },
 });
+
 export class AuthButtons extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      settingsIsOpen: false,
-      queryLogsIsOpen: false,
-      isSignupOpen: false,
-    };
-
-    this.toggleSettings = this.toggleSettings.bind(this);
-    this.toggleAuthentication = this.toggleAuthentication.bind(this);
+  componentDidMount() {
+    this.fetchIfNeeded();
   }
 
-  toggleQueryLogs = () => this.setState(state => ({ queryLogsIsOpen: !state.queryLogsIsOpen }));
-
-  toggleAuthentication() {
-    this.setState(({ isSignupOpen }) => ({ isSignupOpen: !isSignupOpen }));
+  componentDidUpdate() {
+    this.fetchIfNeeded();
   }
 
+  fetchIfNeeded() {
+    const { role, roleId } = this.props;
+    if (role.shouldLoadDeep) {
+      this.props.fetchRole({ id: roleId });
+    }
+  }
 
-  toggleSettings() {
-    this.setState(({ settingsIsOpen }) => ({ settingsIsOpen: !settingsIsOpen }));
+  renderSkeleton() {
+    return <Skeleton.Text type="span" length="10" className="AuthButtons" />;
   }
 
   render() {
-    const { session, auth, intl } = this.props;
+    const { role, metadata, intl } = this.props;
 
-    if (session.loggedIn) {
+    if (!role.id && role.isPending) {
+      return this.renderSkeleton();
+    }
+
+    if (!!role.id) {
       return (
         <span className="AuthButtons">
           <Popover
-            content={(
-              <Menu>
-                <Link to="/notifications" className="bp3-menu-item">
-                  <Icon icon="notifications" />
-                  {' '}
-                  {' '}
-                  <div className="bp3-text-overflow-ellipsis bp3-fill">
-                    {intl.formatMessage(messages.view_notifications)}
-                  </div>
-                </Link>
-                <MenuItem icon="history" onClick={this.toggleQueryLogs} text={intl.formatMessage(messages.queryLogs)} />
-                <MenuItem icon="cog" onClick={this.toggleSettings} text={`${intl.formatMessage(messages.settings)}…`} />
+            popoverClassName="AuthButtons__popover"
+            placement="bottom-end"
+            fill
+            content={
+              <Menu className="AuthButtons__popover__menu">
+                <LinkMenuItem
+                  to="/notifications"
+                  icon="notifications"
+                  text={intl.formatMessage(messages.notifications)}
+                />
+                <LinkMenuItem
+                  to="/alerts"
+                  icon="feed"
+                  text={intl.formatMessage(messages.alerts)}
+                />
+                <LinkMenuItem
+                  to="/exports"
+                  icon="export"
+                  text={intl.formatMessage(messages.exports)}
+                />
                 <MenuDivider />
-                <MenuItem icon="log-out" href="/logout" text={intl.formatMessage(messages.signout)} />
+                <LinkMenuItem
+                  to="/investigations"
+                  icon="briefcase"
+                  text={intl.formatMessage(messages.cases)}
+                />
+                <LinkMenuItem
+                  to="/diagrams"
+                  icon="graph"
+                  text={intl.formatMessage(messages.diagrams)}
+                />
+                <LinkMenuItem
+                  to="/timelines"
+                  icon="gantt-chart"
+                  text={intl.formatMessage(messages.timelines)}
+                />
+                <LinkMenuItem
+                  to="/lists"
+                  icon="list"
+                  text={intl.formatMessage(messages.lists)}
+                />
+                <MenuDivider />
+                <LinkMenuItem
+                  to="/settings"
+                  icon="cog"
+                  text={intl.formatMessage(messages.settings)}
+                />
+                <LinkMenuItem
+                  to="/status"
+                  icon="dashboard"
+                  text={intl.formatMessage(messages.status)}
+                />
+                <LinkMenuItem
+                  to="/logout"
+                  icon="log-out"
+                  text={intl.formatMessage(messages.signout)}
+                />
               </Menu>
-)}
-            position={Position.BOTTOM_LEFT}
+            }
           >
-            <Button icon="user" className="bp3-minimal navbar-option-title">
-              <FormattedMessage id="nav.profile" defaultMessage="Profile" />
+            <Button icon="user" minimal rightIcon="caret-down">
+              <span className="AuthButtons__label">
+                {role ? role.name : 'Profile'}
+              </span>
             </Button>
           </Popover>
-          <SettingsDialog isOpen={this.state.settingsIsOpen} toggleDialog={this.toggleSettings} />
-          <QueryLogsDialog
-            isOpen={this.state.queryLogsIsOpen}
-            toggleDialog={this.toggleQueryLogs}
-          />
         </span>
       );
     }
 
-    if (auth.password_login_uri || auth.oauth_uri) {
+    if (metadata.auth.password_login_uri || metadata.auth.oauth_uri) {
       return (
         <span className="AuthButtons">
-          <AuthenticationDialog
-            auth={auth}
-            isOpen={this.state.isSignupOpen}
-            toggleDialog={this.toggleAuthentication}
+          <DialogToggleButton
+            buttonProps={{
+              text: intl.formatMessage(messages.signin),
+              icon: 'log-in',
+              className: Classes.MINIMAL,
+            }}
+            Dialog={AuthenticationDialog}
+            dialogProps={{ auth: metadata.auth }}
           />
-          <Button icon="log-in" className="bp3-minimal" onClick={this.toggleAuthentication}>
-            <FormattedMessage id="nav.signin" defaultMessage="Sign in / Register" />
-          </Button>
         </span>
       );
     }
@@ -114,4 +183,12 @@ export class AuthButtons extends Component {
     return null;
   }
 }
+
+const mapStateToProps = (state) => ({
+  role: selectCurrentRole(state),
+  roleId: selectCurrentRoleId(state),
+  metadata: selectMetadata(state),
+});
+
+AuthButtons = connect(mapStateToProps, { fetchRole })(AuthButtons);
 export default injectIntl(AuthButtons);

@@ -1,144 +1,135 @@
-import _ from 'lodash';
 import React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { injectIntl, FormattedMessage } from 'react-intl';
 import { Tabs, Tab } from '@blueprintjs/core';
 import queryString from 'query-string';
 
-import {
-  Count, TextLoading, Schema, Icon,
-} from 'src/components/common';
-import CollectionInfoMode from 'src/components/Collection/CollectionInfoMode';
-import CollectionXrefIndexMode from 'src/components/Collection/CollectionXrefIndexMode';
-import CollectionDocumentsMode from 'src/components/Collection/CollectionDocumentsMode';
-import CollectionEntitiesMode from 'src/components/Collection/CollectionEntitiesMode';
-import { selectCollectionXrefIndex, selectModel } from 'src/selectors';
+import withRouter from 'app/withRouter';
+import CollectionDocumentsMode from 'components/Collection/CollectionDocumentsMode';
+import CollectionOverviewMode from 'components/Collection/CollectionOverviewMode';
+import CollectionXrefMode from 'components/Collection/CollectionXrefMode';
+import FacetedEntitySearch from 'components/EntitySearch/FacetedEntitySearch';
+import collectionViewIds from 'components/Collection/collectionViewIds';
+import CollectionView from 'components/Collection/CollectionView';
+import { collectionSearchQuery } from 'queries';
+import { selectCollection, selectEntitiesResult } from 'selectors';
 
-/* eslint-disable */
+import './CollectionViews.scss';
+
 class CollectionViews extends React.Component {
   constructor(props) {
     super(props);
     this.handleTabChange = this.handleTabChange.bind(this);
   }
 
-  getEntitySchemata() {
-    const { collection, model } = this.props;
-    const matching = [];
-    for (const key in collection.schemata) {
-      if (!model.getSchema(key).isDocument()) {
-        matching.push({
-          schema: key,
-          count: collection.schemata[key],
-        });
-      }
+  componentDidUpdate() {
+    const { activeMode } = this.props;
+    if (Object.values(collectionViewIds).indexOf(activeMode) < 0) {
+      this.handleTabChange(collectionViewIds.OVERVIEW);
     }
-    return _.reverse(_.sortBy(matching, ['count']));
-  }
-
-  countDocuments() {
-    const { collection, model } = this.props;
-    let totalCount = 0;
-    for (const key in collection.schemata) {
-      if (model.getSchema(key).isDocument()) {
-        totalCount += collection.schemata[key];
-      }
-    }
-    return totalCount;
   }
 
   handleTabChange(mode) {
-    const { history, location, isPreview } = this.props;
+    const { navigate, location } = this.props;
     const parsedHash = queryString.parse(location.hash);
-    if (isPreview) {
-      parsedHash['preview:mode'] = mode;
-    } else {
-      parsedHash.mode = mode;
-    }
-    history.replace({
+
+    parsedHash.mode = mode;
+    delete parsedHash.type;
+
+    navigate({
       pathname: location.pathname,
-      search: location.search,
       hash: queryString.stringify(parsedHash),
     });
   }
 
   render() {
-    const {
-      isPreview, collection, activeMode, xrefIndex,
-    } = this.props;
-    const numOfDocs = this.countDocuments();
-    const entitySchemata = this.getEntitySchemata();
-    const hasBrowse = (numOfDocs > 0 || collection.casefile);
+    const { collectionId, activeMode, searchQuery, searchResult } = this.props;
+
     return (
       <Tabs
-        id="EntityInfoTabs"
+        id="CollectionInfoTabs"
+        className="CollectionViews__tabs info-tabs-padding"
         onChange={this.handleTabChange}
         selectedTabId={activeMode}
         renderActiveTabPanelOnly
-        className="info-tabs-padding"
       >
-        {isPreview && (
-          <Tab
-            id="info"
-            title={
-              <React.Fragment>
-                <Icon name="info" />
-                <FormattedMessage id="entity.info.info" defaultMessage="Info" />
-              </React.Fragment>}
-            panel={<CollectionInfoMode collection={collection} />}
-          />
-        )}
-        {hasBrowse && (
-          <Tab
-            id="Document"
-            disabled={numOfDocs === 0}
-            title={
-              <React.Fragment>
-                <Icon name="folder" />
-                <FormattedMessage id="entity.info.source" defaultMessage="Documents" />
-                <Count count={numOfDocs} />
-              </React.Fragment>}
-            panel={<CollectionDocumentsMode collection={collection} />}
-          />
-        )}
-        {entitySchemata.map(ref => (
-          <Tab
-            id={ref.schema}
-            key={ref.schema}
-            title={
-              <React.Fragment>
-                <Schema.Smart.Label schema={ref.schema} plural icon />
-                <Count count={ref.count} />
-              </React.Fragment>}
-            panel={<CollectionEntitiesMode collection={collection} activeMode={activeMode} />}
-          />
-        ))}
         <Tab
-          id="xref"
-          disabled={xrefIndex.total < 1}
+          id={collectionViewIds.OVERVIEW}
+          className="CollectionViews__tab"
+          title={<CollectionView.Label id={collectionViewIds.OVERVIEW} icon />}
+          panel={
+            <CollectionOverviewMode
+              isCasefile={false}
+              collectionId={collectionId}
+            />
+          }
+        />
+        <Tab
+          id={collectionViewIds.DOCUMENTS}
+          className="CollectionViews__tab"
           title={
-            <TextLoading loading={xrefIndex.shouldLoad || xrefIndex.isLoading}>
-              <Icon name="relationship" />
-              <FormattedMessage id="entity.info.xref" defaultMessage="Cross-reference" />
-              <Count count={xrefIndex.total} />
-            </TextLoading>}
-          panel={<CollectionXrefIndexMode collection={collection} />}
+            <>
+              <CollectionView.Label
+                id={collectionViewIds.DOCUMENTS}
+                icon
+                isCasefile={false}
+              />
+              <CollectionView.Count
+                id={collectionViewIds.DOCUMENTS}
+                collectionId={collectionId}
+              />
+            </>
+          }
+          panel={
+            <CollectionDocumentsMode
+              collectionId={collectionId}
+              showSearch={false}
+            />
+          }
+        />
+        <Tab
+          id={collectionViewIds.XREF}
+          className="CollectionViews__tab"
+          title={
+            <>
+              <CollectionView.Label id={collectionViewIds.XREF} icon />
+              <CollectionView.Count
+                id={collectionViewIds.XREF}
+                collectionId={collectionId}
+              />
+            </>
+          }
+          panel={<CollectionXrefMode collectionId={collectionId} />}
+        />
+        <Tab
+          id={collectionViewIds.SEARCH}
+          className="CollectionViews__tab"
+          title={
+            collectionViewIds.SEARCH === activeMode && (
+              <CollectionView.Label id={collectionViewIds.SEARCH} icon />
+            )
+          }
+          panel={
+            <FacetedEntitySearch query={searchQuery} result={searchResult} />
+          }
         />
       </Tabs>
     );
   }
 }
 
-
 const mapStateToProps = (state, ownProps) => {
-  const { collection } = ownProps;
+  const { collectionId, location } = ownProps;
+  const searchQuery = collectionSearchQuery(location, collectionId, {
+    highlight: true,
+  });
+
   return {
-    model: selectModel(state),
-    xrefIndex: selectCollectionXrefIndex(state, collection.id),
+    collection: selectCollection(state, collectionId),
+    searchQuery,
+    searchResult: selectEntitiesResult(state, searchQuery),
   };
 };
 
 CollectionViews = connect(mapStateToProps, {})(CollectionViews);
-CollectionViews = injectIntl(CollectionViews);
 CollectionViews = withRouter(CollectionViews);
 export default CollectionViews;

@@ -1,125 +1,58 @@
 import React, { Component } from 'react';
-import { defineMessages, injectIntl } from 'react-intl';
 import queryString from 'query-string';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import Screen from 'src/components/Screen/Screen';
-import CollectionContextLoader from 'src/components/Collection/CollectionContextLoader';
-import CollectionToolbar from 'src/components/Collection/CollectionToolbar';
-import CollectionHeading from 'src/components/Collection/CollectionHeading';
-import CollectionInfoMode from 'src/components/Collection/CollectionInfoMode';
-import CollectionViews from 'src/components/Collection/CollectionViews';
-import LoadingScreen from 'src/components/Screen/LoadingScreen';
-import ErrorScreen from 'src/components/Screen/ErrorScreen';
-import { DualPane, Breadcrumbs, SearchBox } from 'src/components/common';
-import { selectCollection, selectCollectionView } from 'src/selectors';
+import { Navigate } from 'react-router-dom';
 
-
-const messages = defineMessages({
-  placeholder: {
-    id: 'collections.index.filter',
-    defaultMessage: 'Search in {label}',
-  },
-  xref_title: {
-    id: 'collections.xref.title',
-    defaultMessage: 'Cross-reference',
-  },
-});
-
-
-const mapStateToProps = (state, ownProps) => {
-  const { collectionId } = ownProps.match.params;
-  const { location } = ownProps;
-  const hashQuery = queryString.parse(location.hash);
-  return {
-    collectionId,
-    collection: selectCollection(state, collectionId),
-    activeMode: selectCollectionView(state, collectionId, hashQuery.mode),
-  };
-};
-
+import withRouter from 'app/withRouter';
+import Screen from 'components/Screen/Screen';
+import CollectionHeading from 'components/Collection/CollectionHeading';
+import CollectionViews from 'components/Collection/CollectionViews';
+import CollectionWrapper from 'components/Collection/CollectionWrapper';
+import ErrorScreen from 'components/Screen/ErrorScreen';
+import collectionViewIds from 'components/Collection/collectionViewIds';
+import { SinglePane } from 'components/common';
+import { selectCollection } from 'selectors';
 
 export class CollectionScreen extends Component {
-  constructor(props) {
-    super(props);
-    this.onSearch = this.onSearch.bind(this);
-  }
-
-  onSearch(queryText) {
-    const { history, collection } = this.props;
-    const query = {
-      q: queryText,
-      'filter:collection_id': collection.id,
-    };
-    history.push({
-      pathname: '/search',
-      search: queryString.stringify(query),
-    });
-  }
-
   render() {
-    const {
-      intl, collection, collectionId, activeMode,
-    } = this.props;
-    const { extraBreadcrumbs } = this.props;
+    const { collectionId, collection, activeMode } = this.props;
 
     if (collection.isError) {
       return <ErrorScreen error={collection.error} />;
     }
 
-    if (collection.shouldLoad || collection.isLoading) {
-      return (
-        <CollectionContextLoader collectionId={collectionId}>
-          <LoadingScreen />
-        </CollectionContextLoader>
-      );
+    if (collection.casefile === true) {
+      return <Navigate to={`/investigations/${collectionId}`} replace />;
     }
 
-    const operation = (
-      <SearchBox
-        onSearch={this.onSearch}
-        searchPlaceholder={intl.formatMessage(messages.placeholder, { label: collection.label })}
-      />
-    );
-    const breadcrumbs = (
-      <Breadcrumbs operation={operation}>
-        <Breadcrumbs.Collection key="collection" collection={collection} />
-        {activeMode === 'xref' && (
-          <Breadcrumbs.Text text={intl.formatMessage(messages.xref_title)} />
-        )}
-        {extraBreadcrumbs}
-      </Breadcrumbs>
-    );
-
     return (
-      <CollectionContextLoader collectionId={collectionId}>
-        <Screen title={collection.label} description={collection.summary}>
-          {breadcrumbs}
-          <DualPane itemScope itemType="https://schema.org/Dataset">
-            <DualPane.InfoPane className="with-heading">
-              <CollectionToolbar collection={collection} />
-              <CollectionHeading collection={collection} />
-              <div className="pane-content">
-                <CollectionInfoMode collection={collection} />
-              </div>
-            </DualPane.InfoPane>
-            <DualPane.ContentPane>
-              <CollectionViews
-                collection={collection}
-                activeMode={activeMode}
-                isPreview={false}
-              />
-            </DualPane.ContentPane>
-          </DualPane>
-        </Screen>
-      </CollectionContextLoader>
+      <Screen title={collection.label} description={collection.summary}>
+        <CollectionWrapper collectionId={collectionId} collection={collection}>
+          <SinglePane>
+            <CollectionHeading collection={collection} />
+            <CollectionViews
+              collectionId={collectionId}
+              activeMode={activeMode}
+            />
+          </SinglePane>
+        </CollectionWrapper>
+      </Screen>
     );
   }
 }
 
-export default compose(
-  withRouter,
-  connect(mapStateToProps),
-  injectIntl,
-)(CollectionScreen);
+const mapStateToProps = (state, ownProps) => {
+  const { collectionId } = ownProps.params;
+  const { location } = ownProps;
+  const hashQuery = queryString.parse(location.hash);
+  const activeMode = hashQuery.mode || collectionViewIds.OVERVIEW;
+
+  return {
+    collectionId,
+    collection: selectCollection(state, collectionId),
+    activeMode,
+  };
+};
+
+export default compose(withRouter, connect(mapStateToProps))(CollectionScreen);

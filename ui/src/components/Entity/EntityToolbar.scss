@@ -1,0 +1,22 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.EntityToolbar {
+  font-weight: normal;
+
+  .button-close {
+    margin: 0;
+    @include rtl(float, right, left);
+  }
+
+  .#{$bp-ns}-icon {
+    margin: 0 !important;
+    @include rtlSupportInvertedProp(
+      margin,
+      right,
+      $aleph-icon-padding!important,
+      null
+    );
+    color: inherit !important;
+  }
+}

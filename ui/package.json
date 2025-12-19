@@ -1,177 +1,114 @@
 {
   "name": "aleph-ui",
-  "version": "3.1.2",
+  "version": "4.1.7",
   "private": true,
   "dependencies": {
-    "@alephdata/followthemoney": "^1.11.18",
-    "@blueprintjs/core": "^3.15.0",
-    "@blueprintjs/select": "^3.8.0",
-    "@blueprintjs/table": "^3.5.0",
-    "classnames": "^2.2.6",
-    "filesize": "^4.1.2",
-    "uuid": "^3.3.2",
-    "babel-polyfill": "^6.26.0",
-    "axios": "^0.18.0",
-    "react": "^16.8.3",
-    "react-dom": "^16.8.3",
-    "react-helmet": "^6.0.0-beta",
-    "react-intl": "^2.8.0",
-    "react-pdf": "^4.0.5",
-    "react-redux": "^6.0.1",
-    "react-router": "^5.0.0",
-    "react-router-dom": "^5.0.0",
-    "react-svg": "^8.0.1",
-    "react-truncate": "^2.4.0",
-    "react-waypoint": "^9.0.1",
-    "redux-act": "^1.7.4",
-    "redux-thunk": "^2.3.0",
-    "truncate": "^2.0.1",
-    "redux": "^4.0.1",
-    "query-string": "^6.2.0",
-    "jwt-decode": "^2.2.0",
+    "@alephdata/followthemoney": "^3.8.2",
+    "@blueprintjs/colors": "^4.1.5",
+    "@blueprintjs/core": "^4.18.0",
+    "@blueprintjs/icons": "^4.16.0",
+    "@blueprintjs/popover2": "^1.13.9",
+    "@blueprintjs/select": "^4.9.21",
+    "@blueprintjs/table": "^4.10.8",
+    "@formatjs/intl-locale": "^3.3.4",
+    "@formatjs/intl-pluralrules": "^5.2.6",
+    "@formatjs/intl-relativetimeformat": "^11.2.6",
+    "@formatjs/intl-utils": "^3.8.4",
+    "axios": "^0.30.0",
+    "bezier-js": "^6.1.4",
+    "buffer": "^6.0.3",
+    "classnames": "^2.5.1",
+    "crypto": "npm:crypto-browserify@3.12.0",
+    "d3-force": "^3.0.0",
+    "d3-scale": "^4.0.2",
+    "dagre": "^0.8.5",
+    "date-fns": "^4.1.0",
+    "google-libphonenumber": "^3.2.40",
+    "http-proxy-middleware": "^3.0.5",
+    "js-file-download": "^0.4.9",
     "lodash": "^4.17.11",
-    "numeral": "^2.0.6"
+    "moment": "^2.30.1",
+    "numeral": "^2.0.6",
+    "papaparse": "^5.5.2",
+    "query-string": "^9.1.1",
+    "react": "^17.0.2",
+    "react-colorful": "^5.5.1",
+    "react-countup": "^6.5.3",
+    "react-datasheet": "1.4.12",
+    "react-dom": "^17.0.2",
+    "react-draggable": "^4.4.6",
+    "react-dropzone": "^14.3.8",
+    "react-helmet": "^6.0.0-beta",
+    "react-intl": "^6.4.7",
+    "react-markdown": "^8.0.7",
+    "react-pdf": "^7.7.3",
+    "react-redux": "^8.1.3",
+    "react-router-dom": "^6.28.1",
+    "react-waypoint": "^10.1.0",
+    "recharts": "^2.15.1",
+    "redux": "^4.2.1",
+    "redux-act": "^1.7.4",
+    "redux-thunk": "^2.4.2",
+    "rehype-raw": "^7.0.0",
+    "stream": "npm:stream-browserify@^3.0.0",
+    "truncate": "^3.0.0",
+    "typescript": "^4.9.5",
+    "uuid": "^11.1.0",
+    "yaml": "^2.7.1"
   },
-  "devDependencies": {
-    "@babel/plugin-proposal-decorators": "^7.3.0",
-    "@svgr/webpack": "2.4.1",
-    "babel-eslint": "^10.0.1",
-    "babel-jest": "24.1.0",
-    "babel-loader": "^8.0.5",
-    "babel-plugin-named-asset-import": "^0.3.1",
-    "babel-preset-react-app": "^7.0.1",
-    "bfj": "^6.1.1",
-    "case-sensitive-paths-webpack-plugin": "^2.2.0",
-    "chalk": "^2.4.2",
-    "css-loader": "^2.1.0",
-    "dotenv": "^6.2.0",
-    "dotenv-expand": "^4.2.0",
-    "eslint": "^5.14.1",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-loader": "^2.1.2",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-jsx-a11y": "^6.2.1",
-    "eslint-plugin-react": "^7.12.4",
-    "file-loader": "^3.0.1",
-    "fork-ts-checker-webpack-plugin-alt": "^0.4.14",
-    "fs-extra": "^7.0.1",
-    "html-webpack-plugin": "4.0.0-alpha.2",
-    "identity-obj-proxy": "^3.0.0",
-    "jest": "24.1.0",
-    "jest-pnp-resolver": "^1.2.0",
-    "jest-resolve": "^24.1.0",
-    "mini-css-extract-plugin": "^0.5.0",
-    "node-sass": "^4.11.0",
-    "node-sass-package-importer": "^5.3.1",
-    "optimize-css-assets-webpack-plugin": "^5.0.1",
-    "pnp-webpack-plugin": "^1.3.1",
-    "postcss-flexbugs-fixes": "^4.1.0",
-    "postcss-loader": "^3.0.0",
-    "postcss-preset-env": "^6.5.0",
-    "postcss-safe-parser": "^4.0.1",
-    "react-app-polyfill": "^0.2.1",
-    "react-dev-utils": "^7.0.3",
-    "react-intl-cra": "^0.3.4",
-    "react-intl-po": "^2.2.2",
-    "redux-logger": "^3.0.6",
-    "resolve": "^1.10.0",
-    "sass-inline-svg": "^1.2.0",
-    "sass-loader": "^7.1.0",
-    "style-loader": "0.23.1",
-    "terser-webpack-plugin": "^1.2.3",
-    "typescript": "^3.3.3333",
-    "url-loader": "1.1.2",
-    "webpack": "^4.29.5",
-    "webpack-dev-server": "^3.2.1",
-    "webpack-manifest-plugin": "^2.0.4",
-    "workbox-webpack-plugin": "^3.6.3"
+  "overrides": {
+    "browserify-sign": "<=4.2.2"
+  },
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build",
+    "lint": "eslint --ext js,jsx,ts,tsx src --max-warnings 0",
+    "test": "craco test",
+    "eject": "craco eject",
+    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css,scss}'",
+    "format:check": "prettier --check 'src/**/*.{js,jsx,ts,tsx,css,scss}'",
+    "translate": "npm run messages && npm run compile-translations && npm run concat-translations",
+    "messages": "formatjs extract --out-file i18n/messages.json 'src/**/*.{js,jsx,ts,tsx}' --ignore 'src/**/*.d.ts'",
+    "compile-translations": "formatjs compile-folder i18n/translations/raw i18n/translations/compiled",
+    "concat-translations": "node i18n/concatTranslations.js"
   },
   "proxy": "http://api:5000/",
-  "browserslist": [
-    "chrome > 40",
-    "Firefox ESR",
-    "not ie < 11",
-    "defaults"
-  ],
-  "scripts": {
-    "translate": "npm run messages && npm run json2pot && npm run po2json",
-    "messages": "react-intl-cra 'src/**/*.{js,jsx}' -o i18n/messages.json",
-    "json2pot": "react-intl-po json2pot 'i18n/messages.json' -o 'i18n/messages.pot'",
-    "po2json": "react-intl-po po2json 'i18n/translations/*.po' -m 'i18n/messages.json' -o src/content/translations.json",
-    "start": "node scripts/start.js",
-    "build": "node scripts/build.js",
-    "test": "node scripts/test.js --env=jsdom",
-    "start-mocks": "node mocks/server.js"
+  "eslintConfig": {
+    "extends": "react-app"
   },
   "jest": {
-    "collectCoverageFrom": [
-      "src/**/*.{js,jsx,ts,tsx}",
-      "!src/**/*.d.ts"
+    "transformIgnorePatterns": []
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
     ],
-    "resolver": "jest-pnp-resolver",
-    "setupFiles": [
-      "react-app-polyfill/jsdom"
-    ],
-    "testMatch": [
-      "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
-      "<rootDir>/src/**/?(*.)(spec|test).{js,jsx,ts,tsx}"
-    ],
-    "testEnvironment": "jsdom",
-    "testURL": "http://localhost",
-    "transform": {
-      "^.+\\.(js|jsx|ts|tsx)$": "<rootDir>/node_modules/babel-jest",
-      "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
-      "^(?!.*\\.(js|jsx|ts|tsx|css|json)$)": "<rootDir>/config/jest/fileTransform.js"
-    },
-    "transformIgnorePatterns": [
-      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$",
-      "^.+\\.module\\.(css|sass|scss)$"
-    ],
-    "moduleNameMapper": {
-      "^react-native$": "react-native-web",
-      "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy"
-    },
-    "moduleFileExtensions": [
-      "web.js",
-      "js",
-      "web.ts",
-      "ts",
-      "web.tsx",
-      "tsx",
-      "json",
-      "web.jsx",
-      "jsx",
-      "node"
+    "development": [
+      "last 5 chrome version",
+      "last 5 firefox version",
+      "last 5 safari version"
     ]
   },
-  "babel": {
-    "presets": [
-      "react-app"
-    ]
-  },
-  "eslintConfig": {
-    "extends": [
-      "airbnb"
-    ],
-    "env": {
-      "browser": true
-    },
-    "parser": "babel-eslint",
-    "rules": {
-      "no-param-reassign": "off",
-      "no-class-assign": "off",
-      "react/no-danger": "off",
-      "react/prop-types": "off",
-      "react/no-multi-comp": "off",
-      "react/destructuring-assignment": "off",
-      "react/prefer-stateless-function": "off",
-      "import/no-extraneous-dependencies": "off",
-      "import/no-named-as-default": "off",
-      "import/no-relative-parent-imports": "error",
-      "import/prefer-default-export": "off"
-    }
-  },
-  "sideEffects": [
-    "*.css"
-  ]
+  "devDependencies": {
+    "@craco/craco": "^7.1.0",
+    "@formatjs/cli": "^6.2.0",
+    "@testing-library/jest-dom": "^6.1.3",
+    "@testing-library/react": "^12.1.5",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/d3-force": "^3.0.10",
+    "@types/d3-scale": "^4.0.9",
+    "@types/dagre": "^0.7.52",
+    "@types/google-libphonenumber": "^7.4.24",
+    "@types/jest": "^28.1.4",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^22.15.3",
+    "@types/numeral": "^2.0.5",
+    "@types/react": "^17.0.1",
+    "@types/react-dom": "^17.0.1",
+    "prettier": "^3.0.3",
+    "react-scripts": "^5.0.1",
+    "sass": "^1.68.0"
+  }
 }

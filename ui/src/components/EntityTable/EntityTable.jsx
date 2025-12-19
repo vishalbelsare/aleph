@@ -1,138 +1,346 @@
 import React, { Component } from 'react';
 import { defineMessages, injectIntl } from 'react-intl';
-import c from 'classnames';
-
+import { Divider } from '@blueprintjs/core';
+import _ from 'lodash';
 import { compose } from 'redux';
-import { withRouter } from 'react-router';
-import { SortableTH, ErrorSection } from 'src/components/common';
-import EntityTableRow from './EntityTableRow';
+import { connect } from 'react-redux';
+import queryString from 'query-string';
+import { EdgeCreateDialog, TableEditor } from 'react-ftm';
+
+import withRouter from 'app/withRouter';
+import entityEditorWrapper from 'components/Entity/entityEditorWrapper';
+import { Count, ErrorSection, QueryInfiniteLoad } from 'components/common';
+import { DialogToggleButton } from 'components/Toolbar';
+import EntitySetSelector from 'components/EntitySet/EntitySetSelector';
+import DocumentSelectDialog from 'dialogs/DocumentSelectDialog/DocumentSelectDialog';
+import EntityActionBar from 'components/Entity/EntityActionBar';
+import EntityDeleteButton from 'components/Toolbar/EntityDeleteButton';
+import { queryEntities } from 'actions';
+import { selectEntitiesResult } from 'selectors';
+import { showErrorToast, showSuccessToast } from 'app/toast';
+import getEntityLink from 'util/getEntityLink';
+
 import './EntityTable.scss';
 
 const messages = defineMessages({
-  column_name: {
-    id: 'entity.column.name',
-    defaultMessage: 'Name',
+  search_placeholder: {
+    id: 'entity.manager.search_placeholder',
+    defaultMessage: 'Search {schema}',
   },
-  column_collection_id: {
-    id: 'entity.column.collection_id',
-    defaultMessage: 'Source',
+  empty: {
+    id: 'entity.manager.search_empty',
+    defaultMessage: 'No matching {schema} results found',
   },
-  column_schema: {
-    id: 'entity.column.schema',
-    defaultMessage: 'Type',
+  edge_create_success: {
+    id: 'entity.manager.edge_create_success',
+    defaultMessage: 'Successfully linked {source} and {target}',
   },
-  column_countries: {
-    id: 'entity.column.countries',
-    defaultMessage: 'Countries',
+  add_to_success: {
+    id: 'entity.manager.entity_set_add_success',
+    defaultMessage:
+      'Successfully added {count} {count, plural, one {entity} other {entities}} to {entitySet}',
   },
-  'column_properties.fileSize': {
-    id: 'entity.column.file_size',
-    defaultMessage: 'Size',
+  bulk_import: {
+    id: 'entity.viewer.bulk_import',
+    defaultMessage: 'Bulk import',
   },
-  column_dates: {
-    id: 'entity.column.dates',
-    defaultMessage: 'Date',
+  add_link: {
+    id: 'entity.viewer.add_link',
+    defaultMessage: 'Create link',
+  },
+  add_to: {
+    id: 'entity.viewer.add_to',
+    defaultMessage: 'Add to...',
   },
 });
 
-class EntityTable extends Component {
+export class EntityTable extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      result: props.result,
+      selection: [],
     };
+    this.updateQuery = this.updateQuery.bind(this);
+    this.updateSelection = this.updateSelection.bind(this);
+    this.onSortColumn = this.onSortColumn.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
+    this.onEdgeCreate = this.onEdgeCreate.bind(this);
+    this.onDocSelected = this.onDocSelected.bind(this);
+    this.getEntity = this.getEntity.bind(this);
+    this.clearSelection = this.clearSelection.bind(this);
   }
 
-  static getDerivedStateFromProps(nextProps) {
-    const { result } = nextProps;
-    return (!result.isLoading) ? { result } : null;
+  componentDidMount() {
+    this.fetchIfNeeded();
   }
 
-  sortColumn(newField) {
-    const { query, updateQuery } = this.props;
-    const { field: currentField, direction } = query.getSort();
-    // Toggle through sorting states: ascending, descending, or unsorted.
+  componentDidUpdate(prevProps) {
+    if (prevProps.schema !== this.props.schema) {
+      this.clearSelection();
+    }
+    this.fetchIfNeeded();
+  }
+
+  fetchIfNeeded() {
+    const { query, result } = this.props;
+    if (result.shouldLoad) {
+      this.props.queryEntities({ query });
+    }
+  }
+
+  updateQuery(newQuery) {
+    const { navigate, location } = this.props;
+    navigate({
+      pathname: location.pathname,
+      search: newQuery.toLocation(),
+      hash: location.hash,
+    });
+  }
+
+  updateSelection(entityIds, newVal) {
+    this.setState(({ selection }) => {
+      let newSelection;
+      if (newVal) {
+        newSelection = [...new Set([...selection, ...entityIds])];
+      } else {
+        newSelection = selection.filter((id) => entityIds.indexOf(id) < 0);
+      }
+      return { selection: newSelection };
+    });
+  }
+
+  onEntityClick = (entity) => {
+    if (entity) {
+      const { navigate } = this.props;
+      navigate(getEntityLink(entity));
+    }
+  };
+
+  onSortColumn(newField) {
+    const { query, sort } = this.props;
+    const { field: currentField, direction } = sort;
+
     if (currentField !== newField) {
-      return updateQuery(query.sortBy(newField, 'asc'));
+      return this.updateQuery(query.sortBy(`properties.${newField}`, 'asc'));
     }
-    if (direction === 'asc') {
-      updateQuery(query.sortBy(currentField, 'desc'));
-    } else {
-      updateQuery(query.sortBy(currentField, undefined));
+
+    // Toggle through sorting states: ascending, descending, or unsorted.
+    this.updateQuery(
+      query.sortBy(
+        `properties.${currentField}`,
+        direction === 'asc' ? 'desc' : undefined
+      )
+    );
+  }
+
+  onSearchSubmit(queryText) {
+    const { query } = this.props;
+    const newQuery = query.set('q', queryText);
+    this.updateQuery(newQuery);
+  }
+
+  async onEdgeCreate(source, target, type) {
+    const { entityManager, intl } = this.props;
+    if (!source || !target || !type) {
+      return;
     }
-    return undefined;
+
+    try {
+      if (type.property) {
+        source.setProperty(type.property, target.id);
+        entityManager.updateEntity(source);
+      } else if (type.schema?.edge) {
+        await entityManager.createEntity({
+          schema: type.schema,
+          properties: {
+            [type.schema.edge.source]: source.id,
+            [type.schema.edge.target]: target.id,
+          },
+        });
+      }
+      showSuccessToast(
+        intl.formatMessage(messages.edge_create_success, {
+          source: source.getCaption(),
+          target: target.getCaption(),
+        })
+      );
+      this.setState({ selection: [] });
+    } catch (e) {
+      showErrorToast(e);
+    }
+  }
+
+  onDocSelected(table) {
+    if (!table?.id) return;
+    const { navigate, schema } = this.props;
+    const pathname = getEntityLink(table);
+    navigate({
+      pathname,
+      hash: queryString.stringify({ mode: 'mapping', schema: schema.name }),
+    });
+  }
+
+  clearSelection() {
+    this.setState({ selection: [] });
+  }
+
+  getEntity(entityId) {
+    return this.props.result.results.find(({ id }) => entityId === id);
   }
 
   render() {
-    const { query, intl, location } = this.props;
-    const { hideCollection = false, documentMode = false, showPreview = true } = this.props;
-    const { updateSelection, selection } = this.props;
-    const isLoading = this.props.result.total === undefined;
-    const { result } = this.state;
+    const {
+      collection,
+      entityManager,
+      query,
+      intl,
+      result,
+      schema,
+      isEntitySet,
+      sort,
+      updateStatus,
+      writeable,
+    } = this.props;
+    const { selection } = this.state;
+    const visitEntity = this.onEntityClick;
+    const showEmptyComponent = result.total === 0 && query.hasQuery();
+    const selectedEntities = selection
+      .map(this.getEntity)
+      .filter((e) => e !== undefined);
 
-    if (result.isError) {
-      return <ErrorSection error={result.error} />;
-    }
-
-    if (result.total === 0 && result.page === 1) {
-      return null;
-    }
-
-    const TH = ({
-      sortable, field, className, ...otherProps
-    }) => {
-      const { field: sortedField, direction } = query.getSort();
-      return (
-        <SortableTH
-          sortable={sortable}
-          className={className}
-          sorted={sortedField === field && (direction === 'desc' ? 'desc' : 'asc')}
-          onClick={() => this.sortColumn(field)}
-          {...otherProps}
-        >
-          {intl.formatMessage(messages[`column_${field}`])}
-        </SortableTH>
-      );
-    };
     return (
-      <table className="EntityTable data-table">
-        <thead>
-          <tr>
-            {updateSelection && (<th className="select" />)}
-            <TH field="name" className="wide" sortable />
-            {!hideCollection
-              && <TH field="collection_id" />
-            }
-            <TH className="header-schema visible-md-none" field="schema" sortable />
-            {!documentMode && (
-              <TH className="header-country" field="countries" sortable />
-            )}
-            <TH className="header-dates" field="dates" sortable />
-            {documentMode && (
-              <TH className="header-size" field="properties.fileSize" sortable />
-            )}
-          </tr>
-        </thead>
-        <tbody className={c({ updating: isLoading })}>
-          {result.results !== undefined && result.results.map(entity => (
-            <EntityTableRow
-              key={entity.id}
-              entity={entity}
-              location={location}
-              hideCollection={hideCollection}
-              showPreview={showPreview}
-              documentMode={documentMode}
-              updateSelection={updateSelection}
-              selection={selection}
+      <div className="EntityTable">
+        <EntityActionBar
+          query={query}
+          writeable={writeable}
+          onSearchSubmit={this.onSearchSubmit}
+          updateStatus={updateStatus}
+          searchPlaceholder={intl.formatMessage(messages.search_placeholder, {
+            schema: schema.plural.toLowerCase(),
+          })}
+          searchDisabled={result.total === 0 && !query.hasQuery()}
+        >
+          {!isEntitySet && (
+            <>
+              <DialogToggleButton
+                buttonProps={{
+                  text: intl.formatMessage(messages.bulk_import),
+                  icon: 'import',
+                }}
+                Dialog={DocumentSelectDialog}
+                dialogProps={{
+                  schema,
+                  collection,
+                  onSelect: this.onDocSelected,
+                }}
+              />
+              <Divider />
+            </>
+          )}
+          {!schema.isEdge && (
+            <DialogToggleButton
+              buttonProps={{
+                text: intl.formatMessage(messages.add_link),
+                icon: 'new-link',
+                disabled: selection.length < 1 || selection.length > 2,
+              }}
+              Dialog={EdgeCreateDialog}
+              dialogProps={{
+                source: selection.length ? selectedEntities[0] : undefined,
+                target: selection.length > 1 ? selectedEntities[1] : undefined,
+                onSubmit: this.onEdgeCreate,
+                entityManager,
+                fetchEntitySuggestions: (queryText, schemata) =>
+                  entityManager.getEntitySuggestions(
+                    false,
+                    queryText,
+                    schemata
+                  ),
+                intl,
+              }}
             />
-          ))}
-        </tbody>
-      </table>
+          )}
+          <DialogToggleButton
+            buttonProps={{
+              text: intl.formatMessage(messages.add_to),
+              icon: 'add-to-artifact',
+              disabled: selection.length < 1,
+              rightIcon: <Count count={selection.length || null} />,
+            }}
+            Dialog={EntitySetSelector}
+            dialogProps={{
+              collection,
+              entities: selectedEntities,
+              onSuccess: this.clearSelection,
+              showTimelines: schema.getTemporalStartProperties().length > 0,
+            }}
+          />
+          <EntityDeleteButton
+            entities={selectedEntities}
+            onSuccess={this.clearSelection}
+            actionType={isEntitySet ? 'remove' : 'delete'}
+            deleteEntity={entityManager.overload.deleteEntity}
+            showCount
+          />
+        </EntityActionBar>
+        <div className="EntityTable__content">
+          {showEmptyComponent && (
+            <ErrorSection
+              icon="search"
+              title={intl.formatMessage(messages.empty, {
+                schema: schema.plural.toLowerCase(),
+              })}
+            />
+          )}
+          {!showEmptyComponent && (
+            <>
+              <TableEditor
+                key={schema.name}
+                entities={result.results}
+                schema={schema}
+                entityManager={entityManager}
+                fetchEntitySuggestions={(queryText, schemata) =>
+                  entityManager.getEntitySuggestions(false, queryText, schemata)
+                }
+                sort={sort}
+                sortColumn={this.onSortColumn}
+                selection={selection}
+                updateSelection={this.updateSelection}
+                writeable={writeable}
+                isPending={result.total === undefined}
+                visitEntity={visitEntity}
+              />
+              <QueryInfiniteLoad
+                query={query}
+                result={result}
+                fetch={this.props.queryEntities}
+              />
+            </>
+          )}
+        </div>
+      </div>
     );
   }
 }
 
+const mapStateToProps = (state, ownProps) => {
+  const { query } = ownProps;
+  const sort = query.getSort();
+
+  return {
+    sort: !_.isEmpty(sort)
+      ? {
+          field: sort.field.replace('properties.', ''),
+          direction: sort.direction,
+        }
+      : {},
+    result: selectEntitiesResult(state, query),
+  };
+};
+
 export default compose(
   withRouter,
-  injectIntl,
+  entityEditorWrapper,
+  connect(mapStateToProps, { queryEntities }),
+  injectIntl
 )(EntityTable);

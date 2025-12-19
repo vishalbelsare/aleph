@@ -1,106 +1,56 @@
 import logging
-import google.auth
-from banal import ensure_list
-from urllib.parse import urlparse, urljoin
-from werkzeug.local import LocalProxy
+from urllib.parse import urlencode, urljoin
+
+from banal import clean_dict
 from flask import Flask, request
 from flask import url_for as flask_url_for
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_mail import Mail
-from flask_cors import CORS
 from flask_babel import Babel
-from kombu import Queue
-from celery import Celery, Task
-from celery.schedules import crontab
-from balkhash import init as init_balkhash
+from flask_cors import CORS
+from flask_mail import Mail
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from flask_talisman import Talisman
+from elasticsearch import Elasticsearch, TransportError
+
 from followthemoney import set_model_locale
-from elasticsearch import Elasticsearch
-from urlnormalizer import query_string
 from servicelayer.cache import get_redis
 from servicelayer.archive import init_archive
 from servicelayer.extensions import get_extensions
+from servicelayer.util import service_retries, backoff
+from servicelayer.logs import configure_logging, LOG_FORMAT_JSON
+from servicelayer.taskqueue import get_rabbitmq_channel
+from servicelayer import settings as sls
+from werkzeug.local import LocalProxy
+from werkzeug.middleware.profiler import ProfilerMiddleware
 
-from aleph import settings, signals
+from aleph.settings import SETTINGS
 from aleph.cache import Cache
 from aleph.oauth import configure_oauth
+from aleph.util import LoggingTransport
+from aleph.metrics.flask import PrometheusExtension
 
+
+NONE = "'none'"
 log = logging.getLogger(__name__)
 
 db = SQLAlchemy()
 migrate = Migrate()
 mail = Mail()
-
-
-class SessionTask(Task):
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        db.session.remove()
-
-
-celery = Celery('aleph', task_cls=SessionTask)
 babel = Babel()
+talisman = Talisman()
+prometheus = PrometheusExtension()
 
 
-def create_app(config={}):
-    app = Flask('aleph')
-    app.config.from_object(settings)
-    app.config.update(config)
-
-    if 'postgres' not in settings.DATABASE_URI:
-        raise RuntimeError("aleph database must be PostgreSQL!")
-
-    app.config.update({
-        'SQLALCHEMY_DATABASE_URI': settings.DATABASE_URI,
-        'BABEL_DOMAIN': 'aleph'
-    })
-
-    queue = Queue(settings.QUEUE_NAME,
-                  routing_key=settings.QUEUE_ROUTING_KEY,
-                  queue_arguments={'x-max-priority': 9})
-    celery.conf.update(
-        imports=('aleph.queues'),
-        broker_url=settings.BROKER_URI,
-        task_always_eager=settings.EAGER,
-        task_eager_propagates=True,
-        task_ignore_result=True,
-        task_acks_late=True,
-        task_queues=(queue,),
-        task_default_queue=settings.QUEUE_NAME,
-        task_default_routing_key=settings.QUEUE_ROUTING_KEY,
-        worker_max_tasks_per_child=1000,
-        result_persistent=False,
-        beat_schedule={
-            'hourly': {
-                'task': 'aleph.logic.scheduled.hourly',
-                'schedule': crontab(hour='*', minute=0)
-            },
-            'daily': {
-                'task': 'aleph.logic.scheduled.daily',
-                'schedule': crontab(hour=5, minute=0)
-            }
-        },
-    )
-
-    migrate.init_app(app, db, directory=settings.ALEMBIC_DIR)
-    configure_oauth(app)
-    mail.init_app(app)
-    db.init_app(app)
-    babel.init_app(app)
-    CORS(app, origins=settings.CORS_ORIGINS)
-
-    # This executes all registered init-time plugins so that other
-    # applications can register their behaviour.
-    for plugin in get_extensions('aleph.init'):
-        plugin(app=app)
-    return app
-
-
-@babel.localeselector
 def determine_locale():
     try:
-        options = settings.UI_LANGUAGES
-        locale = request.accept_languages.best_match(options)
+        options = SETTINGS.UI_LANGUAGES
+        if str(request.accept_languages) == "*":
+            # For #3704: if any language is fine pick the default one
+            locale = SETTINGS.DEFAULT_LANGUAGE
+        else:
+            locale = request.accept_languages.best_match(
+                options, default=SETTINGS.DEFAULT_LANGUAGE
+            )
         locale = locale or str(babel.default_locale)
     except RuntimeError:
         locale = str(babel.default_locale)
@@ -108,74 +58,139 @@ def determine_locale():
     return locale
 
 
-@signals.handle_request_log.connect
-def stackdriver_log(sender, payload={}):
-    if not hasattr(settings, '_gcp_logger'):
-        try:
-            from google.cloud import logging
-            google.auth.default()
-            client = logging.Client()
-            logger_name = '%s-api' % settings.APP_NAME
-            settings._gcp_logger = client.logger(logger_name)
-            log.debug("Enabled Stackdriver request logging.")
-        except Exception as exc:
-            log.debug("Disable Stackdriver: %s", exc)
-            settings._gcp_logger = None
-    if settings._gcp_logger is not None:
-        settings._gcp_logger.log_struct(payload)
+def create_app(config=None):
+    if config is None:
+        config = {}
+
+    configure_logging(level=logging.DEBUG)
+    app = Flask("aleph")
+    app.config.from_object(SETTINGS)
+    app.config.update(config)
+
+    if "postgres" not in SETTINGS.DATABASE_URI:
+        raise RuntimeError("aleph database must be PostgreSQL!")
+
+    app.config.update(
+        {
+            "SQLALCHEMY_DATABASE_URI": SETTINGS.DATABASE_URI,
+            "FLASK_SKIP_DOTENV": True,
+            "FLASK_DEBUG": SETTINGS.DEBUG,
+            "BABEL_DOMAIN": "aleph",
+            "PROFILE": SETTINGS.PROFILE,
+        }
+    )
+
+    if SETTINGS.PROFILE:
+        app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[30])
+
+    migrate.init_app(app, db, directory=SETTINGS.ALEMBIC_DIR)
+    configure_oauth(app, cache=get_cache())
+    mail.init_app(app)
+    db.init_app(app)
+    babel.init_app(app, locale_selector=determine_locale)
+    prometheus.init_app(app)
+    CORS(
+        app,
+        resources=r"/api/*",
+        origins=SETTINGS.CORS_ORIGINS,
+        supports_credentials=True,
+    )
+    feature_policy = {
+        "accelerometer": NONE,
+        "camera": NONE,
+        "geolocation": NONE,
+        "gyroscope": NONE,
+        "magnetometer": NONE,
+        "microphone": NONE,
+        "payment": NONE,
+        "usb": NONE,
+    }
+    talisman.init_app(
+        app,
+        force_https=SETTINGS.FORCE_HTTPS,
+        strict_transport_security=SETTINGS.FORCE_HTTPS,
+        feature_policy=feature_policy,
+        content_security_policy=SETTINGS.CONTENT_POLICY,
+    )
+
+    from aleph.views import mount_app_blueprints
+
+    mount_app_blueprints(app)
+
+    # This executes all registered init-time plugins so that other
+    # applications can register their behaviour.
+    for plugin in get_extensions("aleph.init"):
+        plugin(app=app)
+
+    return app
 
 
 @migrate.configure
 def configure_alembic(config):
-    config.set_main_option('sqlalchemy.url', settings.DATABASE_URI)
+    config.set_main_option("sqlalchemy.url", SETTINGS.DATABASE_URI)
     return config
 
 
 def get_es():
-    if not hasattr(settings, '_es_instance'):
-        es = Elasticsearch(settings.ELASTICSEARCH_URL,
-                           timeout=settings.ELASTICSEARCH_TIMEOUT)
-        settings._es_instance = es
-    return settings._es_instance
+    url = SETTINGS.ELASTICSEARCH_URL
+    timeout = SETTINGS.ELASTICSEARCH_TIMEOUT
+    con_opts = clean_dict(
+        {
+            "ca_certs": SETTINGS.ELASTICSEARCH_TLS_CA_CERTS,
+            "verify_certs": SETTINGS.ELASTICSEARCH_TLS_VERIFY_CERTS,
+            "client_cert": SETTINGS.ELASTICSEARCH_TLS_CLIENT_CERT,
+            "client_key": SETTINGS.ELASTICSEARCH_TLS_CLIENT_KEY,
+        }
+    )
+    for attempt in service_retries():
+        try:
+            if not hasattr(SETTINGS, "_es_instance"):
+                # When logging structured logs, use a custom transport to log
+                # all es queries and their response time
+                if sls.LOG_FORMAT == LOG_FORMAT_JSON:
+                    es = Elasticsearch(
+                        url,
+                        transport_class=LoggingTransport,
+                        timeout=timeout,
+                        **con_opts,
+                    )
+                else:
+                    es = Elasticsearch(url, timeout=timeout, **con_opts)
+                es.info()
+                SETTINGS._es_instance = es
+            return SETTINGS._es_instance
+        except TransportError as exc:
+            log.exception("ElasticSearch error: %s", exc.error)
+            backoff(failures=attempt)
+    raise RuntimeError("Could not connect to ElasticSearch")
 
 
 def get_archive():
-    if not hasattr(settings, '_aleph_archive'):
-        settings._aleph_archive = init_archive(archive_type=settings.ARCHIVE_TYPE,  # noqa
-                                               bucket=settings.ARCHIVE_BUCKET,
-                                               path=settings.ARCHIVE_PATH)
-    return settings._aleph_archive
+    if not hasattr(SETTINGS, "_archive"):
+        SETTINGS._archive = init_archive()
+    return SETTINGS._archive
 
 
 def get_cache():
-    if not hasattr(settings, '_cache') or settings._cache is None:
-        settings._cache = Cache(get_redis(), prefix=settings.APP_NAME)
-    return settings._cache
-
-
-def get_dataset(dataset):
-    """Connect to a balkhash dataset."""
-    return init_balkhash(dataset)
+    if not hasattr(SETTINGS, "_cache") or SETTINGS._cache is None:
+        SETTINGS._cache = Cache(get_redis(), prefix=SETTINGS.APP_NAME)
+    return SETTINGS._cache
 
 
 es = LocalProxy(get_es)
 kv = LocalProxy(get_redis)
 cache = LocalProxy(get_cache)
 archive = LocalProxy(get_archive)
+rabbitmq_channel = LocalProxy(get_rabbitmq_channel)
 
 
 def url_for(*a, **kw):
     """Overwrite Flask url_for to force external paths."""
     try:
-        kw['_external'] = False
-        query = kw.pop('_query', None)
-        authorize = kw.pop('_authorize', False)
-        relative = kw.pop('_relative', False)
+        kw["_external"] = False
+        query = kw.pop("_query", None)
+        relative = kw.pop("_relative", False)
         path = flask_url_for(*a, **kw)
-        if authorize is True and hasattr(request, 'authz'):
-            token = request.authz.to_token(scope=path)
-            query = list(ensure_list(query))
-            query.append(('api_key', token))
         return url_external(path, query, relative=relative)
     except RuntimeError:
         return None
@@ -183,18 +198,8 @@ def url_for(*a, **kw):
 
 def url_external(path, query, relative=False):
     """Generate external URLs with HTTPS (if configured)."""
-    try:
-        if query is not None:
-            path = path + query_string(query)
-        if relative:
-            return path
-
-        # api_url = request.url_root
-        api_url = settings.APP_UI_URL
-        if settings.URL_SCHEME is not None:
-            parsed = urlparse(api_url)
-            parsed = parsed._replace(scheme=settings.URL_SCHEME)
-            api_url = parsed.geturl()
-        return urljoin(api_url, path)
-    except RuntimeError:
-        return None
+    if query is not None:
+        path = "%s?%s" % (path, urlencode(query))
+    if relative:
+        return path
+    return urljoin(SETTINGS.APP_UI_URL, path)

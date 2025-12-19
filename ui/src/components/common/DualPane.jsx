@@ -3,18 +3,6 @@ import c from 'classnames';
 
 import './DualPane.scss';
 
-
-class InfoPane extends PureComponent {
-  render() {
-    const { children, className } = this.props;
-    return (
-      <aside className={c('InfoPane', className)} style={this.props.style}>
-        {children}
-      </aside>
-    );
-  }
-}
-
 class SidePane extends PureComponent {
   render() {
     const { children, className } = this.props;
@@ -38,8 +26,6 @@ class ContentPane extends PureComponent {
 }
 
 class DualPane extends PureComponent {
-  static InfoPane = InfoPane;
-
   static SidePane = SidePane;
 
   static ContentPane = ContentPane;
@@ -48,7 +34,7 @@ class DualPane extends PureComponent {
     const { children, className, ...restProps } = this.props;
     return (
       <article {...restProps} className={c('DualPane', className)}>
-        { children }
+        <div className="DualPane__inner-container">{children}</div>
       </article>
     );
   }

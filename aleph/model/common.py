@@ -1,6 +1,9 @@
 import uuid
+import secrets
 import logging
-from datetime import datetime
+from sqlalchemy import false
+from datetime import datetime, date
+from flask_babel import lazy_gettext
 
 from aleph.core import db
 
@@ -12,14 +15,31 @@ def make_textid():
     return uuid.uuid4().hex
 
 
+def make_token():
+    return secrets.token_urlsafe()
+
+
+def iso_text(obj):
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    return obj
+
+
+def query_like(column, text):
+    if text is None or len(text) < 3:
+        return false()
+    text = text.replace("%", " ").replace("_", " ")
+    text = "%%%s%%" % text
+    return column.ilike(text)
+
+
 class IdModel(object):
     id = db.Column(db.Integer(), primary_key=True)
 
 
 class DatedModel(object):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
-                           onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @classmethod
     def all(cls, deleted=False):
@@ -41,15 +61,12 @@ class DatedModel(object):
             return
         return cls.all(deleted=deleted).filter_by(id=id).first()
 
-    def delete(self, deleted_at=None):
+    def delete(self):
         # hard delete
         db.session.delete(self)
 
     def to_dict_dates(self):
-        return {
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
-        }
+        return {"created_at": self.created_at, "updated_at": self.updated_at}
 
 
 class SoftDeleteModel(DatedModel):
@@ -62,7 +79,7 @@ class SoftDeleteModel(DatedModel):
     def to_dict_dates(self):
         data = super(SoftDeleteModel, self).to_dict_dates()
         if self.deleted_at:
-            data['deleted_at'] = self.deleted_at
+            data["deleted_at"] = self.deleted_at
         return data
 
     @classmethod
@@ -85,3 +102,16 @@ class SoftDeleteModel(DatedModel):
         pq = pq.filter(cls.deleted_at != None)  # noqa
         log.info("[%s]: %d deleted objects", cls.__name__, pq.count())
         pq.delete(synchronize_session=False)
+
+
+class Status(object):
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILED = "failed"
+    DEFAULT = PENDING
+
+    LABEL = {
+        PENDING: lazy_gettext("pending"),
+        SUCCESS: lazy_gettext("successful"),
+        FAILED: lazy_gettext("failed"),
+    }

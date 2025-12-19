@@ -1,0 +1,53 @@
+@mixin breakText {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+@mixin buttonNotFirstChild {
+  border-radius: 3px;
+  @include rtl(border-bottom-left-radius, 0, null);
+  @include rtl(border-top-left-radius, 0, null);
+  @include rtl(border-bottom-right-radius, null, 0);
+  @include rtl(border-top-right-radius, null, 0);
+}
+
+@mixin buttonNotLastChild {
+  border-radius: 3px;
+  @include rtl(border-bottom-right-radius, 0, null);
+  @include rtl(border-top-right-radius, 0, null);
+  @include rtl(border-bottom-left-radius, null, 0);
+  @include rtl(border-top-left-radius, null, 0);
+  @include rtlSupportInvertedProp(margin, right, -1px, null);
+}
+
+@mixin rtl($property, $ltr-value, $rtl-value) {
+  [dir='ltr'] & {
+    #{$property}: $ltr-value;
+  }
+
+  [dir='rtl'] & {
+    #{$property}: $rtl-value;
+  }
+}
+
+@function inverseRightLeftName($direction) {
+  @if $direction==left {
+    @return right;
+  } @else {
+    @return left;
+  }
+}
+
+@mixin rtlSupportInvertedProp($property, $direction, $ltr-value, $rtl-value) {
+  @include rtl(#{$property}-#{$direction}, $ltr-value, $rtl-value);
+  @include rtl(
+    #{$property}-#{inverseRightLeftName($direction)},
+    $rtl-value,
+    $ltr-value
+  );
+}

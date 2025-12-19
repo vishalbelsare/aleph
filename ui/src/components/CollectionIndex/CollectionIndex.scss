@@ -1,0 +1,17 @@
+@import 'app/variables.scss';
+
+.CollectionIndex {
+  &__controls {
+    .QueryTags {
+      margin-top: $aleph-grid-size * 1.5;
+    }
+
+    .#{$bp-ns}-input-group {
+      margin-bottom: $aleph-grid-size;
+    }
+  }
+
+  .index-item .#{$bp-ns}-icon {
+    margin-top: 2px;
+  }
+}

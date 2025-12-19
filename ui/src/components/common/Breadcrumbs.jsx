@@ -1,17 +1,45 @@
 import React, { PureComponent, Component } from 'react';
-import { Icon } from '@blueprintjs/core';
+import { Classes, Divider, Icon } from '@blueprintjs/core';
+import c from 'classnames';
 
-import { Collection, Entity } from 'src/components/common';
+import {
+  Collection,
+  Entity,
+  EntitySet,
+  Skeleton,
+  Restricted,
+} from 'components/common';
 
 import './Breadcrumbs.scss';
 
-
 class CollectionBreadcrumb extends PureComponent {
+  renderSkeleton() {
+    return (
+      <li>
+        <Skeleton.Text type="span" length={20} className={Classes.BREADCRUMB} />
+      </li>
+    );
+  }
+
   render() {
-    const { collection } = this.props;
+    const { collection, active } = this.props;
+    if (collection?.id === undefined) {
+      return this.renderSkeleton();
+    }
+
     return (
       <li key={collection.id}>
-        <Collection.Link collection={collection} className="bp3-breadcrumb" icon truncate={30} />
+        <Collection.Status
+          collection={collection}
+          className={c(
+            Classes.BREADCRUMB,
+            active && Classes.BREADCRUMB_CURRENT
+          )}
+          icon
+          truncate={75}
+          LabelComponent={Collection.Link}
+        />
+        <Restricted collection={collection} />
       </li>
     );
   }
@@ -23,38 +51,70 @@ class EntityBreadcrumb extends PureComponent {
     const parent = entity.getFirst('parent');
     const ancestors = entity.getProperty('ancestors');
     const hasAncestors = ancestors.length > 1;
+
     return (
-      <React.Fragment>
-        { hasAncestors && (
+      <>
+        {hasAncestors && (
           <li key="ancestors">
-            <span className="bp3-breadcrumb">
+            <span className={Classes.BREADCRUMB}>
               <Icon icon="more" />
             </span>
           </li>
         )}
-        { !!parent && (
+        {!!parent && (
           <li key={parent.id}>
-            <Entity.Link entity={parent} className="bp3-breadcrumb" icon truncate={30} />
+            <Entity.Link
+              entity={parent}
+              className={Classes.BREADCRUMB}
+              icon
+              truncate={30}
+            />
           </li>
         )}
         <li key={entity.id}>
-          <Entity.Link entity={entity} className="bp3-breadcrumb bp3-breadcrumb-current" icon truncate={30} />
+          <Entity.Label
+            entity={entity}
+            className={c(Classes.BREADCRUMB, Classes.BREADCRUMB_CURRENT)}
+            truncate={30}
+          />
         </li>
-      </React.Fragment>
+      </>
     );
   }
 }
 
+class EntitySetBreadcrumb extends PureComponent {
+  render() {
+    const { entitySet, icon } = this.props;
+    return (
+      <li key={entitySet.id}>
+        <EntitySet.Label
+          entitySet={entitySet}
+          className={c(Classes.BREADCRUMB, Classes.BREADCRUMB_CURRENT)}
+          icon={icon}
+          truncate={30}
+        />
+      </li>
+    );
+  }
+}
 
 class TextBreadcrumb extends PureComponent {
   render() {
-    const { text } = this.props;
-    if (!text) {
+    const { children, icon, active, key } = this.props;
+    if (!children) {
       return null;
     }
+    const className = c(
+      Classes.BREADCRUMB,
+      active && Classes.BREADCRUMB_CURRENT
+    );
     return (
-      <li key="text">
-        <span className="bp3-breadcrumb bp3-breadcrumb-current">{text}</span>
+      <li key={key || 'text'}>
+        <span className={className}>
+          {icon && <Icon icon={icon} />}
+          {children}
+        </span>
       </li>
     );
   }
@@ -65,25 +125,43 @@ export default class Breadcrumbs extends Component {
 
   static Entity = EntityBreadcrumb;
 
+  static EntitySet = EntitySetBreadcrumb;
+
   static Text = TextBreadcrumb;
 
-  render() {
-    const { collection, children, operation } = this.props;
+  renderOperations() {
+    const { operation, search, status } = this.props;
+    return (
+      <>
+        {status}
+        {status && search && <Divider />}
+        {search}
+        {search && operation && <Divider />}
+        {operation}
+      </>
+    );
+  }
 
-    const collectionCrumbs = [];
-    if (collection) {
-      collectionCrumbs.push((
-        <CollectionBreadcrumb collection={collection} />
-      ));
+  renderCenter() {
+    if (!this.props.center) {
+      return null;
     }
 
+    return <div className="Breadcrumbs__center">{this.props.center}</div>;
+  }
+
+  render() {
+    const { children, type } = this.props;
+
     return (
-      <nav className="Breadcrumbs">
-        <ul className="bp3-breadcrumbs">
-          {collectionCrumbs}
-          {children}
-        </ul>
-        {operation}
+      <nav className={c('Breadcrumbs', type)}>
+        <div className="Breadcrumbs__inner-container">
+          <div className="Breadcrumbs__main">
+            <ul className={Classes.BREADCRUMBS}>{children}</ul>
+          </div>
+          {this.renderCenter()}
+          <div className="Breadcrumbs__right">{this.renderOperations()}</div>
+        </div>
       </nav>
     );
   }

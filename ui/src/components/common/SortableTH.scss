@@ -1,15 +1,23 @@
-@import "src/app/variables.scss";
+@use 'sass:math';
+
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
 
 .SortableTH {
   div {
     display: flex;
 
     .caret {
-      margin-left: auto;
+      @include rtlSupportInvertedProp(
+        margin,
+        left,
+        math.div($aleph-grid-size, 3),
+        null
+      );
       transition: opacity 0.1s;
 
       &.hidden {
-        opacity: 0.1;
+        opacity: 0;
       }
     }
   }

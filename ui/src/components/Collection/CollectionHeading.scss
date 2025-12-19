@@ -1,0 +1,20 @@
+@import 'app/variables.scss';
+
+.CollectionHeading {
+  margin: 20px 0 35px;
+
+  &__title,
+  &__subtitle {
+    margin: 10px 0;
+    overflow-wrap: break-word;
+  }
+
+  &__title {
+    line-height: 1.5;
+    max-width: 800px;
+  }
+
+  .CategoryLink {
+    color: inherit;
+  }
+}

@@ -1,100 +1,117 @@
-import React from 'react';
-import { connect } from 'react-redux';
+import React, { PureComponent } from 'react';
 import { FormattedMessage } from 'react-intl';
-import { Pre } from '@blueprintjs/core';
+import { Classes, Pre } from '@blueprintjs/core';
 
-import SectionLoading from 'src/components/common/SectionLoading';
-import { selectDocumentContent } from 'src/selectors';
+import { Property, Skeleton } from 'components/common';
+import wordList from 'util/wordList';
 
 import './EmailViewer.scss';
 
-const mapStateToProps = (state, ownProps) => {
-  const { document } = ownProps;
-  return {
-    content: selectDocumentContent(state, document.id),
-  };
-};
-
-export class EmailViewer extends React.Component {
-  renderBody() {
-    const { content } = this.props;
-    if (content.html && content.html.length) {
-      return <span className="email-body" dangerouslySetInnerHTML={{ __html: content.html }} />;
-    }
-    if (content.text && content.text.length > 0) {
-      return <Pre className="email-body">{content.text}</Pre>;
+class EmailViewer extends PureComponent {
+  headerProperty(name, entitiesProp) {
+    const { document } = this.props;
+    const prop = document.schema.getProperty(name);
+    const values = document.getProperty(prop).map((value) => {
+      let result = (
+        <Property.Value key={value.id || value} prop={prop} value={value} />
+      );
+      if (entitiesProp) {
+        const normValue = value.toLowerCase().trim();
+        const eprop = document.schema.getProperty(entitiesProp);
+        document.getProperty(eprop).forEach((entity) => {
+          if (!entity?.id) {
+            return;
+          }
+          entity.getProperty('email').forEach((email) => {
+            if (normValue.indexOf(email.toLowerCase().trim()) !== -1) {
+              result = (
+                <Property.Value
+                  key={entity.id}
+                  prop={eprop}
+                  value={entity}
+                  translitLookup={entity.latinized}
+                />
+              );
+            }
+          });
+        });
+      }
+      return result;
+    });
+    if (values.length === 0) {
+      return null;
     }
     return (
-      <p className="email-no-body bp3-text-muted">
-        <FormattedMessage id="email.body.empty" defaultMessage="No message body." />
-      </p>
+      <tr key={prop.qname}>
+        <th>{prop.label}</th>
+        <td>{wordList(values, ', ')}</td>
+      </tr>
     );
   }
 
-  renderHeaders(headers = this.props.content.headers) {
+  renderHeaders() {
+    const { document } = this.props;
+    if (document.isPending) {
+      return null;
+    }
     return (
       <div className="email-header">
-        <table className="bp3-html-table">
+        <table className={Classes.HTML_TABLE}>
           <tbody>
-            {headers.date && (
-            <tr>
-              <th><FormattedMessage id="email.date" defaultMessage="Date" /></th>
-              <td>{headers.date}</td>
-            </tr>
-            )}
-            {headers.from && (
-            <tr>
-              <th><FormattedMessage id="email.from" defaultMessage="From" /></th>
-              <td>{headers.from}</td>
-            </tr>
-            )}
-            <tr>
-              <th><FormattedMessage id="email.subject" defaultMessage="Subject" /></th>
-              <td>{headers.subject}</td>
-            </tr>
-            {headers.to && (
-            <tr>
-              <th><FormattedMessage id="email.to" defaultMessage="Recipient" /></th>
-              <td>{headers.to}</td>
-            </tr>
-            )}
-            {headers.cc && (
-            <tr>
-              <th><FormattedMessage id="email.cc" defaultMessage="CC" /></th>
-              <td>{headers.cc}</td>
-            </tr>
-            )}
-            {headers.bcc && (
-            <tr>
-              <th><FormattedMessage id="email.bcc" defaultMessage="BCC" /></th>
-              <td>{headers.bcc}</td>
-            </tr>
-            )}
+            {this.headerProperty('from', 'emitters')}
+            {this.headerProperty('date')}
+            {this.headerProperty('subject')}
+            {this.headerProperty('to', 'recipients')}
+            {this.headerProperty('cc', 'recipients')}
+            {this.headerProperty('bcc', 'recipients')}
+            {this.headerProperty('inReplyToEmail')}
           </tbody>
         </table>
       </div>
     );
   }
 
+  renderBody() {
+    const { document } = this.props;
 
-  render() {
-    const { content } = this.props;
-    const { headers } = content;
-    if (content.shouldLoad || content.isLoading) {
-      return <SectionLoading />;
+    if (document.isPending) {
+      return <Skeleton.Text type="span" length={1000} />;
+    }
+
+    if (document.safeHtml && document.safeHtml.length) {
+      return document.safeHtml.map((value, index) => (
+        <div key={index} dangerouslySetInnerHTML={{ __html: value }} />
+      ));
+    }
+
+    const bodyText = document.getFirst('bodyText');
+    if (bodyText && bodyText.length > 0) {
+      return <Pre>{bodyText}</Pre>;
     }
 
     return (
-      <React.Fragment>
-        <div className="outer">
-          <div className="inner EmailViewer">
-            {headers && this.renderHeaders(headers)}
+      <p className={Classes.TEXT_MUTED}>
+        <FormattedMessage
+          id="email.body.empty"
+          defaultMessage="No message body."
+        />
+      </p>
+    );
+  }
+
+  render() {
+    const { dir } = this.props;
+    return (
+      <div className="outer">
+        <div className="inner EmailViewer">
+          {this.renderHeaders()}
+          <div className="email-body" dir={dir}>
             {this.renderBody()}
           </div>
         </div>
-      </React.Fragment>
+      </div>
     );
   }
 }
 
-export default connect(mapStateToProps)(EmailViewer);
+export default EmailViewer;

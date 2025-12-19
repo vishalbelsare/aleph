@@ -1,55 +1,132 @@
-from flask import Blueprint, request, stream_with_context
+import logging
+from aleph.settings import SETTINGS
+from flask import Blueprint, request
+from pantomime.types import XLSX
 
-from aleph.model import Match, Audit
-from aleph.logic.audit import record_audit
-from aleph.search import QueryParser, DatabaseQueryResult
-from aleph.logic.entities.xref import xref_collection, export_matches_csv
-from aleph.views.serializers import MatchSerializer, MatchCollectionsSerializer
-from aleph.views.forms import XrefSchema
-from aleph.views.util import get_db_collection, jsonify, stream_csv
-from aleph.views.util import parse_request
+from aleph.search import XrefQuery
+from aleph.logic.profiles import pairwise_judgements
+from aleph.logic.export import create_export
+from aleph.views.serializers import XrefSerializer
+from aleph.queues import queue_task
+from aleph.views.util import (
+    get_db_collection,
+    get_index_collection,
+    get_session_id,
+    jsonify,
+)
+
+blueprint = Blueprint("xref_api", __name__)
+log = logging.getLogger(__name__)
 
 
-blueprint = Blueprint('xref_api', __name__)
-
-
-@blueprint.route('/api/2/collections/<int:collection_id>/xref', methods=['GET'])
+@blueprint.route("/api/2/collections/<int:collection_id>/xref", methods=["GET"])  # noqa
 def index(collection_id):
-    collection = get_db_collection(collection_id)
-    record_audit(Audit.ACT_COLLECTION, id=collection.id)
-    parser = QueryParser(request.args, request.authz)
-    q = Match.group_by_collection(collection.id, authz=request.authz)
-    result = DatabaseQueryResult(request, q, parser=parser)
-    return MatchCollectionsSerializer.jsonify_result(result)
+    """
+    ---
+    get:
+      summary: Fetch cross-reference results
+      description: >-
+        Fetch cross-reference matches for entities in the collection
+        with id `collection_id`
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                - $ref: '#/components/schemas/QueryResponse'
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/XrefResponse'
+      tags:
+      - Xref
+      - Collection
+    """
+    get_index_collection(collection_id, request.authz.READ)
+    result = XrefQuery.handle(request, collection_id=collection_id)
+    pairs = []
+    for xref in result.results:
+        pairs.append((xref.get("entity_id"), xref.get("match_id")))
+    judgements = pairwise_judgements(pairs, collection_id)
+    for xref in result.results:
+        key = (xref.get("entity_id"), xref.get("match_id"))
+        xref["judgement"] = judgements.get(key)
+    return XrefSerializer.jsonify_result(result)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>/xref/<int:other_id>',
-                 methods=['GET'])
-def matches(collection_id, other_id):
-    collection = get_db_collection(collection_id)
-    record_audit(Audit.ACT_COLLECTION, id=collection.id)
-    other = get_db_collection(other_id)
-    record_audit(Audit.ACT_COLLECTION, id=other.id)
-    parser = QueryParser(request.args, request.authz)
-    q = Match.find_by_collection(collection.id, other.id)
-    result = DatabaseQueryResult(request, q, parser=parser)
-    return MatchSerializer.jsonify_result(result)
-
-
-@blueprint.route('/api/2/collections/<int:collection_id>/xref', methods=['POST'])
+@blueprint.route("/api/2/collections/<int:collection_id>/xref", methods=["POST"])
 def generate(collection_id):
-    data = parse_request(XrefSchema)
+    """
+    ---
+    post:
+      summary: Generate cross-reference matches
+      description: >
+        Generate cross-reference matches for entities in a collection.
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    description: accepted
+                    type: string
+                type: object
+          description: Accepted
+      tags:
+      - Xref
+      - Collection
+    """
     collection = get_db_collection(collection_id, request.authz.WRITE)
-    args = {
-        "against_collection_ids": data.get("against_collection_ids")
-    }
-    xref_collection.apply_async([collection.id], kwargs=args, priority=5)
-    return jsonify({'status': 'accepted'}, status=202)
+    queue_task(collection, SETTINGS.STAGE_XREF)
+    return jsonify({"status": "accepted"}, status=202)
 
 
-@blueprint.route('/api/2/collections/<int:collection_id>/xref.csv')
-def csv_export(collection_id):
+@blueprint.route("/api/2/collections/<int:collection_id>/xref.xlsx", methods=["POST"])
+def export(collection_id):
+    """
+    ---
+    post:
+      summary: Download cross-reference results
+      description: Download results of cross-referencing as an Excel file
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '202':
+          description: Accepted
+      tags:
+      - Xref
+      - Collection
+    """
     collection = get_db_collection(collection_id, request.authz.READ)
-    record_audit(Audit.ACT_COLLECTION, id=collection.id)
-    matches = export_matches_csv(collection.id, request.authz)
-    return stream_csv(stream_with_context(matches))
+    label = "%s - Crossreference results" % collection.label
+    export = create_export(
+        operation=SETTINGS.STAGE_EXPORT_XREF,
+        role_id=request.authz.id,
+        label=label,
+        collection=collection,
+        mime_type=XLSX,
+    )
+    job_id = get_session_id()
+    queue_task(None, SETTINGS.STAGE_EXPORT_XREF, job_id=job_id, export_id=export.id)
+    return ("", 202)

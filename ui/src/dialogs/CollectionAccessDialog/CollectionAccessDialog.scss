@@ -1,11 +1,15 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
 
 .CollectionAccessDialog {
-  .bp3-control.bp3-checkbox {
+  .#{$bp-ns}-control.#{$bp-ns}-checkbox {
     margin-bottom: 0;
   }
 
   .header-topic {
     font-weight: bold;
+  }
+
+  .#{$bp-ns}-callout {
+    margin-top: $aleph-grid-size;
   }
 }

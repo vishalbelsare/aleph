@@ -1,0 +1,77 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.MappingPropertyAssign {
+  &.TableViewer {
+    height: auto;
+
+    .#{$bp-ns}-table-column-name {
+      text-align: center;
+      font-weight: 500;
+      border-bottom: 1px solid $aleph-border-color;
+    }
+
+    .#{$bp-ns}-table-header-content {
+      padding: 0 3px 5px;
+      text-align: center;
+      height: 90px;
+      position: relative;
+    }
+
+    .#{$bp-ns}-button-text {
+      overflow: hidden;
+      white-space: nowrap;
+      max-width: 115px;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .#{$bp-ns}-submenu {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  &__headerSelect {
+    position: relative;
+    padding: $aleph-grid-size;
+    top: 50%;
+    transform: translateY(-50%);
+
+    &__label {
+      white-space: nowrap;
+      margin-bottom: 3px;
+
+      .MappingLabel {
+        color: white !important;
+      }
+    }
+
+    &__item {
+      font-weight: bold;
+      align-items: center !important;
+    }
+
+    &__remove {
+      position: absolute;
+      top: 0;
+      @include rtl(right, 0, null);
+      @include rtl(left, null, 0);
+      .#{$bp-ns}-icon {
+        color: white !important;
+      }
+    }
+
+    &__propListHeading {
+      padding: $aleph-grid-size !important;
+      margin: 0 !important;
+    }
+  }
+
+  &__error {
+    line-height: 1.4;
+    font-style: italic;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}

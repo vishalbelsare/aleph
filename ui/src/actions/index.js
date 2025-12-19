@@ -1,58 +1,82 @@
 import { createAction } from 'redux-act';
-import { fetchRole, suggestRoles, updateRole } from './roleActions';
-import { addAlert, deleteAlert, fetchAlerts } from './alertActions';
-import { deleteNotifications, queryNotifications } from './notificationActions';
-import {
-  deleteDocument,
-  fetchDocumentContent,
-  ingestDocument,
-} from './documentActions';
-import {
+
+export {
+  queryRoles,
+  fetchRole,
+  suggestRoles,
+  updateRole,
+  generateApiKey,
+} from './roleActions';
+export { createAlert, deleteAlert, queryAlerts } from './alertActions';
+export { queryNotifications } from './notificationActions';
+export { setConfigValue, dismissHint } from './configActions';
+export { ingestDocument } from './documentActions';
+export {
   createCollection,
   deleteCollection,
   fetchCollection,
   fetchCollectionPermissions,
-  fetchCollectionXrefIndex,
   queryCollections,
-  queryXrefMatches,
-  tiggerXrefMatches,
-  triggerCollectionAnalyze,
+  queryCollectionXref,
+  triggerCollectionXref,
+  triggerCollectionXrefDownload,
+  triggerCollectionReingest,
+  triggerCollectionReindex,
+  triggerCollectionCancel,
   updateCollection,
   updateCollectionPermissions,
 } from './collectionActions';
-import {
-  fetchEntity, fetchEntityReferences, fetchEntityTags, queryEntities,
-} from './entityActions';
-
 export {
-  suggestRoles,
-  fetchRole,
-  updateRole,
-  fetchAlerts,
-  addAlert,
-  deleteAlert,
-  queryEntities,
+  createEntity,
+  deleteEntity,
   fetchEntity,
-  fetchEntityReferences,
   fetchEntityTags,
-  fetchDocumentContent,
-  queryCollections,
-  fetchCollection,
-  updateCollection,
-  fetchCollectionPermissions,
-  updateCollectionPermissions,
-  fetchCollectionXrefIndex,
-  queryXrefMatches,
-  queryNotifications,
-  createCollection,
-  deleteCollection,
-  deleteNotifications,
-  ingestDocument,
-  deleteDocument,
-  triggerCollectionAnalyze,
-  tiggerXrefMatches,
-};
+  queryEntities,
+  querySimilar,
+  queryEntityExpand,
+  updateEntity,
+} from './entityActions';
+export {
+  createEntityMapping,
+  deleteEntityMapping,
+  fetchEntityMapping,
+  flushEntityMapping,
+  queryMappings,
+  updateEntityMapping,
+} from './entityMappingActions';
+export {
+  createEntitySetMutate,
+  createEntitySetNoMutate,
+  deleteEntitySet,
+  entitySetAddEntity,
+  queryEntitySetItems,
+  updateEntitySetItemMutate,
+  updateEntitySetItemNoMutate,
+  fetchEntitySet,
+  queryEntitySets,
+  queryEntitySetEntities,
+  updateEntitySet,
+} from './entitySetActions';
+export {
+  queryProfileExpand,
+  fetchProfile,
+  fetchProfileTags,
+  pairwiseJudgement,
+} from './profileActions';
+export { fetchMessages, dismissMessage } from './messagesActions';
+export {
+  fetchMetadata,
+  fetchStatistics,
+  fetchSystemStatus,
+} from './metadataActions';
+export { loginWithToken, loginWithPassword, logout } from './sessionActions';
+export { fetchExports, triggerQueryExport } from './exportActions';
+export {
+  queryBookmarks,
+  createBookmark,
+  deleteBookmark,
+} from './bookmarkActions';
 
-export { fetchMetadata, fetchStatistics } from './metadataActions';
-
+export { createAction };
 export const setLocale = createAction('SET_LOCALE');
+export const forceMutate = createAction('MUTATE');

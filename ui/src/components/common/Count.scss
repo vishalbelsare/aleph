@@ -1,7 +1,7 @@
-@import "src/app/variables.scss";
+@import 'app/variables.scss';
 
 .Count {
-    &.bp3-tag {
-        background-color: $aleph-theme-intent;
-    }
+  .#{$bp-ns}-tab[aria-disabled='true'] & {
+    opacity: 0.6;
+  }
 }

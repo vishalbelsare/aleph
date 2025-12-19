@@ -1,0 +1,18 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.MappingQueryLabel {
+  &__url {
+    @include breakText;
+  }
+
+  &__entityList {
+    margin-top: $aleph-grid-size;
+  }
+
+  &__entity {
+    @include rtlSupportInvertedProp(margin, right, $aleph-grid-size, null);
+    // color: $blue1;
+    // font-weight: bold;
+  }
+}

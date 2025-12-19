@@ -1,0 +1,10 @@
+@import 'app/variables.scss';
+
+.SettingsScreen__cards {
+  max-width: 720px;
+  padding-bottom: 1px;
+}
+
+.SettingsScreen__cards > * + * {
+  margin-top: 2.5 * $aleph-grid-size;
+}

@@ -1,80 +1,63 @@
-import React, { Component } from 'react';
-import { FormattedMessage } from 'react-intl';
+import React, { Component, PureComponent } from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import truncateText from 'truncate';
 import c from 'classnames';
+import { Entity as VLEntity } from 'react-ftm';
 
-import { Schema } from 'src/components/common';
-import togglePreview from 'src/util/togglePreview';
-import { fetchEntity as fetchEntityAction } from 'src/actions';
-import { selectEntity } from 'src/selectors';
-import getEntityLink from 'src/util/getEntityLink';
+import withRouter from 'app/withRouter';
+import EntitySelect from 'components/common/EntitySelect';
+import togglePreview from 'util/togglePreview';
+import { fetchEntity } from 'actions';
+import { selectEntity } from 'selectors';
+import getEntityLink from 'util/getEntityLink';
 
 import './Entity.scss';
 
-
-class EntityLabel extends Component {
-  shouldComponentUpdate(nextProps) {
-    const { entity = {} } = this.props;
-    const { entity: nextEntity = {} } = nextProps;
-    return entity.id !== nextEntity.id;
-  }
-
-  render() {
-    const {
-      entity, icon = false, documentMode = false, truncate,
-    } = this.props;
-
-    if (!entity) {
-      return null;
-    }
-    const title = entity.getFirst('title') || entity.getCaption();
-    const fileName = entity.getFirst('fileName') || title;
-    const caption = title || fileName;
-    const fullLabel = documentMode ? fileName : caption;
-    const label = truncate ? truncateText(fullLabel, truncate) : fullLabel;
-    return (
-      <span className={c('EntityLabel', { untitled: !label })} title={caption}>
-        {icon && <Schema.Icon schema={entity.schema} />}
-        { !label && (
-          <FormattedMessage id="entity.label.missing" defaultMessage="Untitled" />
-        )}
-        {label}
-      </span>
-    );
-  }
-}
-
-
-class EntityLink extends Component {
+class EntityLink extends PureComponent {
   constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
   }
 
   onClick(event) {
-    const { entity, history, preview } = this.props;
-    if (preview) {
-      event.preventDefault();
-      togglePreview(history, entity, 'entity');
+    const {
+      entity,
+      navigate,
+      location,
+      preview,
+      previewQueryText,
+      profile = true,
+    } = this.props;
+    const modifierPressed =
+      event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
+
+    if (!preview || modifierPressed) {
+      return;
     }
+
+    event.preventDefault();
+    togglePreview(navigate, location, entity, profile, previewQueryText);
   }
 
   render() {
-    const { entity, className } = this.props;
-    if (!entity || !entity.schema) {
-      return <Entity.Label {...this.props} />;
+    const { entity, className, children, preview, profile = true } = this.props;
+    const content = children || <VLEntity.Label {...this.props} />;
+    const link = getEntityLink(entity, profile);
+    if (!link) {
+      return content;
     }
+    // const profileClass = entity.profileId ? 'profile' : undefined;
     return (
-      <Link to={getEntityLink(entity)} onClick={this.onClick} className={c('EntityLink', className)}>
-        <Entity.Label {...this.props} />
+      <Link
+        to={link}
+        onClick={preview ? this.onClick : undefined}
+        className={c('EntityLink', className, { visited: !!entity.lastViewed })}
+      >
+        {content}
       </Link>
     );
   }
 }
-
 
 class EntityLoad extends Component {
   componentDidMount() {
@@ -86,15 +69,15 @@ class EntityLoad extends Component {
   }
 
   fetchIfNeeded() {
-    const { id, entity, fetchEntity } = this.props;
+    const { id, entity } = this.props;
     if (entity.shouldLoad) {
-      fetchEntity({ id });
+      this.props.fetchEntity({ id });
     }
   }
 
   render() {
     const { entity, children, renderWhenLoading } = this.props;
-    if (entity.isLoading && renderWhenLoading !== undefined) {
+    if (entity.isPending && renderWhenLoading !== undefined) {
       return renderWhenLoading;
     }
     return children(entity);
@@ -106,11 +89,13 @@ const mapStateToProps = (state, ownProps) => ({
 });
 
 class Entity {
-  static Label = EntityLabel;
+  static Label = VLEntity.Label;
 
   static Link = withRouter(EntityLink);
 
-  static Load = connect(mapStateToProps, { fetchEntity: fetchEntityAction })(EntityLoad);
+  static Load = connect(mapStateToProps, { fetchEntity })(EntityLoad);
+
+  static Select = EntitySelect;
 }
 
 export default Entity;

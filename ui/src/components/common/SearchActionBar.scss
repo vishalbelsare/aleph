@@ -1,0 +1,40 @@
+@import 'app/variables.scss';
+@import 'app/mixins.scss';
+
+.SearchActionBar {
+  margin-bottom: $aleph-grid-size;
+  padding-right: 1px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  &__main {
+    @include rtlSupportInvertedProp(
+      margin,
+      right,
+      $aleph-grid-size * 0.5 !important,
+      null
+    );
+  }
+  &__secondary {
+    flex: 0 0 auto !important;
+
+    .#{$bp-ns}-button {
+      border-radius: $aleph-border-radius !important;
+    }
+  }
+
+  &__export {
+    @include rtlSupportInvertedProp(margin, left, $aleph-grid-size, null);
+    font-weight: 500;
+
+    .#{$bp-ns}-icon,
+    .#{$bp-ns}-button-text {
+      color: $aleph-greyed-text !important;
+    }
+
+    svg {
+      height: 12px !important;
+      width: 12px !important;
+    }
+  }
+}
